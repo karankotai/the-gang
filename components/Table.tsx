@@ -68,7 +68,7 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
                       taken ? 'bg-stone-700 text-stone-500' :
                         'bg-stone-200 text-stone-900 hover:bg-amber-300')
                   }
-                  onClick={() => send({ t: 'claimChip', value: v })}
+                  onClick={() => send(mine ? { t: 'returnChip' } : { t: 'claimChip', value: v })}
                 >
                   {v}
                 </button>
