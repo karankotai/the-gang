@@ -1,5 +1,4 @@
 import type { Card, ChipValue, LockedPhase, Phase, Player, RoomState, RoundResult } from './types'
-import { deal } from './dealer'
 import { describeHand, evaluateBest, compareHands } from './evaluator'
 
 export function initialRoomState(roomCode: string): RoomState {
@@ -111,23 +110,8 @@ export function advancePhase(state: RoomState, community?: Card[]): RoomState {
     if (isClaimPhase(np)) {
       for (let v = 1; v <= n; v++) newPool[v as ChipValue] = null
     }
-    // Resolve the full 5-card board:
-    // - caller may supply it explicitly (server path)
-    // - or we deal internally (test / standalone path)
-    let fullBoard: Card[]
-    if (community && community.length >= 5) {
-      fullBoard = community
-    } else if (community && community.length > 0) {
-      // partial override — extend with dealt cards if needed
-      fullBoard = community
-    } else if (state.community.length >= 5) {
-      fullBoard = state.community
-    } else {
-      // Deal the board now (happens at preflop->flop when server hasn't set community)
-      const playerIds = state.players.map(p => p.id)
-      const dealt = deal(playerIds)
-      fullBoard = dealt.community as Card[]
-    }
+    // Use caller-supplied community or fall back to what is already on state.
+    const fullBoard: Card[] = community ?? state.community
 
     let newCommunity: Card[]
     if (np === 'flop') newCommunity = fullBoard.slice(0, 3)

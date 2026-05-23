@@ -10,6 +10,7 @@ import {
   advancePhase,
   resolveShowdown,
 } from '../stateMachine'
+import { deal } from '../dealer'
 
 describe('stateMachine', () => {
   it('initialRoomState is in lobby with empty players', () => {
@@ -70,7 +71,8 @@ describe('stateMachine', () => {
     s = startHeist(s, { seed: 's' })
     s = claimChip(s, 'a', 1); s = claimChip(s, 'b', 2); s = claimChip(s, 'c', 3)
     s = setReadyForNextPhase(s, 'a', true); s = setReadyForNextPhase(s, 'b', true); s = setReadyForNextPhase(s, 'c', true)
-    s = advancePhase(s)
+    const { community } = deal(['a', 'b', 'c'], 's')
+    s = advancePhase(s, community)
     expect(s.phase).toBe('flop')
     expect(s.community).toHaveLength(3)
     expect(s.lockedChips).toHaveLength(1)
