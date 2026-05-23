@@ -1,6 +1,14 @@
 'use client'
 import { useGameStore } from '@/lib/client/store'
-import type { ChipValue, ClientMessage } from '@/lib/types'
+import type { Card, ChipValue, ClientMessage } from '@/lib/types'
+
+const RANK_LABEL: Record<number, string> = {
+  11: 'J', 12: 'Q', 13: 'K', 14: 'A',
+}
+const SUIT_GLYPH: Record<string, string> = { S: '♠', H: '♥', D: '♦', C: '♣' }
+function formatCard(c: Card): string {
+  return `${RANK_LABEL[c.rank] ?? c.rank}${SUIT_GLYPH[c.suit]}`
+}
 
 export function Table({ send }: { send: (m: ClientMessage) => void }) {
   const state = useGameStore(s => s.state)!
@@ -45,7 +53,7 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
         <div className="flex justify-center gap-2">
           {state.community.length === 0 && <span className="text-stone-500">(none yet)</span>}
           {state.community.map((c, i) => (
-            <span key={i} className="px-3 py-2 rounded bg-stone-100 text-stone-900 font-mono">{c.rank}{c.suit}</span>
+            <span key={i} className="px-3 py-2 rounded bg-stone-100 text-stone-900 font-mono">{formatCard(c)}</span>
           ))}
         </div>
       </section>
@@ -83,7 +91,7 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
         <div className="text-sm text-stone-400 text-center">Your hand</div>
         <div className="flex justify-center gap-2">
           {hole ? hole.map((c, i) => (
-            <span key={i} className="px-3 py-2 rounded bg-stone-100 text-stone-900 font-mono">{c.rank}{c.suit}</span>
+            <span key={i} className="px-3 py-2 rounded bg-stone-100 text-stone-900 font-mono">{formatCard(c)}</span>
           )) : <span className="text-stone-500">(waiting for deal)</span>}
         </div>
         {['preflop', 'flop', 'turn', 'river'].includes(state.phase) && (

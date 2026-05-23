@@ -42,6 +42,11 @@ export default class GangServer implements Party.Server {
         connection.close()
         return
       }
+      if (this.room.players.length >= 6) {
+        this.send(connection, { t: 'error', code: 'ROOM_FULL', msg: 'Room is full (max 6)' })
+        connection.close()
+        return
+      }
       this.room = addPlayer(this.room, { id: playerId, name: 'Player', avatar: '' })
       this.connByPlayer.set(playerId, connection)
     }

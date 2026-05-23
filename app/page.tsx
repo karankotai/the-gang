@@ -4,8 +4,10 @@ import { useState } from 'react'
 
 function genRoomCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  const bytes = new Uint8Array(6)
+  crypto.getRandomValues(bytes)
   let out = ''
-  for (let i = 0; i < 6; i++) out += chars[Math.floor(Math.random() * chars.length)]
+  for (let i = 0; i < 6; i++) out += chars[bytes[i] % chars.length]
   return out
 }
 
