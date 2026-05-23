@@ -1,7 +1,7 @@
 'use client'
 import { useGameStore } from '@/lib/client/store'
 import type { ChipValue, ClientMessage } from '@/lib/types'
-import { formatCard } from '@/lib/client/format'
+import { CardFace } from '@/components/CardFace'
 
 export function Table({ send }: { send: (m: ClientMessage) => void }) {
   const state = useGameStore(s => s.state)!
@@ -46,7 +46,7 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
         <div className="flex justify-center gap-2">
           {state.community.length === 0 && <span className="text-stone-500">(none yet)</span>}
           {state.community.map((c, i) => (
-            <span key={i} className="px-3 py-2 rounded bg-stone-100 text-stone-900 font-mono">{formatCard(c)}</span>
+            <CardFace key={i} card={c} size="md" />
           ))}
         </div>
       </section>
@@ -88,7 +88,7 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
         <div className="text-sm text-stone-400 text-center">Your hand</div>
         <div className="flex justify-center gap-2">
           {hole ? hole.map((c, i) => (
-            <span key={i} className="px-3 py-2 rounded bg-stone-100 text-stone-900 font-mono">{formatCard(c)}</span>
+            <CardFace key={i} card={c} size="lg" />
           )) : <span className="text-stone-500">(waiting for deal)</span>}
         </div>
         {['preflop', 'flop', 'turn', 'river'].includes(state.phase) && (
