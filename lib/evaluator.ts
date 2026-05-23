@@ -58,3 +58,54 @@ export function evaluate5(cards: Card[]): HandRank {
   if (groupSizes[0] === 2) return { category: 'pair', kickers: [groups[0][0], ...ranks.filter(r => r !== groups[0][0])] }
   return { category: 'high-card', kickers: ranks }
 }
+
+export function compareHands(a: HandRank, b: HandRank): number {
+  const ca = categoryRank(a.category), cb = categoryRank(b.category)
+  if (ca !== cb) return ca - cb
+  for (let i = 0; i < Math.max(a.kickers.length, b.kickers.length); i++) {
+    const av = a.kickers[i] ?? 0, bv = b.kickers[i] ?? 0
+    if (av !== bv) return av - bv
+  }
+  return 0
+}
+
+function combinations<T>(arr: T[], k: number): T[][] {
+  const out: T[][] = []
+  const rec = (start: number, chosen: T[]) => {
+    if (chosen.length === k) { out.push(chosen); return }
+    for (let i = start; i < arr.length; i++) rec(i + 1, [...chosen, arr[i]])
+  }
+  rec(0, [])
+  return out
+}
+
+export function evaluateBest(hole: [Card, Card], community: Card[]): HandRank {
+  const all = [...hole, ...community]
+  if (all.length < 5) throw new Error('evaluateBest needs at least 5 cards total')
+  let best: HandRank | null = null
+  for (const combo of combinations(all, 5)) {
+    const r = evaluate5(combo)
+    if (!best || compareHands(r, best) > 0) best = r
+  }
+  return best!
+}
+
+const RANK_NAME: Record<number, string> = {
+  2:'Two',3:'Three',4:'Four',5:'Five',6:'Six',7:'Seven',8:'Eight',
+  9:'Nine',10:'Ten',11:'Jack',12:'Queen',13:'King',14:'Ace',
+}
+
+export function describeHand(h: HandRank): string {
+  const k = h.kickers
+  switch (h.category) {
+    case 'high-card': return `High Card (${RANK_NAME[k[0]]})`
+    case 'pair': return `Pair (${RANK_NAME[k[0]]})`
+    case 'two-pair': return `Two Pair (${RANK_NAME[k[0]]} & ${RANK_NAME[k[1]]})`
+    case 'three-of-a-kind': return `Three of a Kind (${RANK_NAME[k[0]]})`
+    case 'straight': return `Straight (${RANK_NAME[k[0]]} high)`
+    case 'flush': return `Flush (${RANK_NAME[k[0]]} high)`
+    case 'full-house': return `Full House (${RANK_NAME[k[0]]}s over ${RANK_NAME[k[1]]}s)`
+    case 'four-of-a-kind': return `Four of a Kind (${RANK_NAME[k[0]]}s)`
+    case 'straight-flush': return `Straight Flush (${RANK_NAME[k[0]]} high)`
+  }
+}
