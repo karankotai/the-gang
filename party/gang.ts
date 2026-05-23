@@ -27,7 +27,8 @@ export default class GangServer implements Party.Server {
 
   onConnect(connection: Party.Connection, ctx: Party.ConnectionContext) {
     const url = new URL(ctx.request.url)
-    const playerId = url.searchParams.get('playerId')!
+    const playerId = url.searchParams.get('playerId')
+    if (!playerId) { connection.close(); return }
     connection.setState({ playerId } as any)
     const existing = this.room.players.find(p => p.id === playerId)
     if (existing) {
@@ -100,6 +101,10 @@ export default class GangServer implements Party.Server {
         this.room = nextRoundOrHeist(this.room)
         if (this.room.phase === 'preflop') this.dealAndStart()
         break
+      case 'kickProposal':
+      case 'kickVote':
+        // Phase 2: kick-vote feature not implemented yet
+        return
       case 'leave':
         break
     }
