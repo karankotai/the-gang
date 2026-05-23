@@ -4,6 +4,7 @@ import type { ChipValue, ClientMessage } from '@/lib/types'
 import { PHASE_COLOR } from '@/lib/types'
 import { CardFace } from '@/components/CardFace'
 import { ChipIcon } from '@/components/ChipIcon'
+import { motion, LayoutGroup } from 'framer-motion'
 
 export function Table({ send }: { send: (m: ClientMessage) => void }) {
   const state = useGameStore(s => s.state)!
@@ -17,7 +18,8 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
   const iAmReady = state.phaseReady.includes(myId)
 
   return (
-    <main className="min-h-screen bg-[#3a2a1a] text-stone-100 p-4 space-y-4">
+    <LayoutGroup>
+    <main className="min-h-screen table-felt text-stone-100 p-4 space-y-4">
       <header className="flex items-center justify-between text-sm">
         <span>Heist {state.heist.number}/4 · won {state.heist.roundsWon} lost {state.heist.roundsLost}</span>
         <span className="uppercase tracking-wider">{state.phase}</span>
@@ -38,15 +40,21 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
                   return <ChipIcon key={i} value={Number(v)} color={PHASE_COLOR[l.phase]} size={24} />
                 })}
                 {opChip && (
-                  <ChipIcon
-                    value={Number(opChip)}
-                    color={
-                      state.phase === 'preflop' || state.phase === 'flop' || state.phase === 'turn' || state.phase === 'river'
-                        ? PHASE_COLOR[state.phase]
-                        : 'white'
-                    }
-                    size={28}
-                  />
+                  <motion.div
+                    layoutId={`chip-${state.phase}-${Number(opChip)}`}
+                    layout
+                    transition={{ type: 'spring', stiffness: 260, damping: 28 }}
+                  >
+                    <ChipIcon
+                      value={Number(opChip)}
+                      color={
+                        state.phase === 'preflop' || state.phase === 'flop' || state.phase === 'turn' || state.phase === 'river'
+                          ? PHASE_COLOR[state.phase]
+                          : 'white'
+                      }
+                      size={28}
+                    />
+                  </motion.div>
                 )}
               </div>
             </div>
@@ -78,16 +86,22 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
               const currentPhaseColor = isClaim ? PHASE_COLOR[state.phase as Extract<typeof state.phase, 'preflop'|'flop'|'turn'|'river'>] : 'white'
               const color = mine ? 'mine' : heldByOther ? 'other' : (holder == null ? currentPhaseColor : 'unclaimed')
               return (
-                <ChipIcon
+                <motion.div
                   key={v}
-                  value={v}
-                  color={color}
-                  size={56}
-                  initial={heldByOther ? initial : undefined}
-                  title={heldBy ? (mine ? 'Click to return' : `Held by ${heldBy.name} — click to steal`) : 'Click to claim'}
-                  ariaLabel={`Chip ${v}`}
-                  onClick={() => send(mine ? { t: 'returnChip' } : { t: 'claimChip', value: v })}
-                />
+                  layoutId={`chip-${state.phase}-${v}`}
+                  layout
+                  transition={{ type: 'spring', stiffness: 260, damping: 28 }}
+                >
+                  <ChipIcon
+                    value={v}
+                    color={color}
+                    size={56}
+                    initial={heldByOther ? initial : undefined}
+                    title={heldBy ? (mine ? 'Click to return' : `Held by ${heldBy.name} — click to steal`) : 'Click to claim'}
+                    ariaLabel={`Chip ${v}`}
+                    onClick={() => send(mine ? { t: 'returnChip' } : { t: 'claimChip', value: v })}
+                  />
+                </motion.div>
               )
             })}
           </div>
@@ -147,5 +161,6 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
         <div className="fixed bottom-2 right-2 text-xs text-rose-400">{errors[errors.length - 1]}</div>
       )}
     </main>
+    </LayoutGroup>
   )
 }
