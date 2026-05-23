@@ -31,11 +31,12 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
             <span className="text-stone-400">Room {state.roomCode}</span>
           </header>
 
-          <section className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+          <section className="md:grid md:grid-cols-3 md:gap-3 lg:grid-cols-5">
+            <div className="flex md:contents gap-2 overflow-x-auto pb-2 md:pb-0 md:overflow-visible">
             {opponents.map(p => {
               const opChip = Object.entries(state.currentChips).find(([, v]) => v === p.id)?.[0]
               return (
-                <div key={p.id} className="p-3 rounded bg-stone-900/60 border border-stone-800">
+                <div key={p.id} className="flex-shrink-0 min-w-[140px] md:min-w-0 p-3 rounded bg-stone-900/60 border border-stone-800">
                   <div className="font-semibold">{p.name}</div>
                   <div className="text-xs text-stone-400">{p.connected ? 'online' : 'offline'}</div>
                   <div className="mt-2 flex gap-1 text-xs">
@@ -65,11 +66,12 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
                 </div>
               )
             })}
+            </div>
           </section>
 
           <section className="text-center space-y-2">
             <div className="text-sm text-stone-400">Community</div>
-            <div className="flex justify-center gap-2">
+            <div className="flex justify-center gap-1.5 md:gap-2">
               {state.community.length === 0 && <span className="text-stone-500">(none yet)</span>}
               {state.community.map((c, i) => (
                 <motion.div
@@ -78,6 +80,7 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
                   animate={{ rotateY: 0, opacity: 1 }}
                   transition={{ delay: i * 0.12, duration: 0.45, ease: 'easeOut' }}
                   style={{ transformStyle: 'preserve-3d' }}
+                  className="scale-90 md:scale-100"
                 >
                   <CardFace card={c} size="md" />
                 </motion.div>
@@ -122,7 +125,7 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
             </section>
           )}
 
-          <section className="space-y-2">
+          <section className="space-y-2 sticky bottom-0 bg-stone-950/95 backdrop-blur border-t border-stone-800 -mx-4 px-4 py-3 md:static md:mx-0 md:p-0 md:bg-transparent md:border-0 md:backdrop-blur-none">
             <div className="text-sm text-stone-400 text-center">Your hand</div>
             <div className="flex justify-center gap-2">
               {hole ? hole.map((c, i) => (
