@@ -67,7 +67,15 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
         <div className="flex justify-center gap-2">
           {state.community.length === 0 && <span className="text-stone-500">(none yet)</span>}
           {state.community.map((c, i) => (
-            <CardFace key={i} card={c} size="md" />
+            <motion.div
+              key={i}
+              initial={{ rotateY: 180, opacity: 0 }}
+              animate={{ rotateY: 0, opacity: 1 }}
+              transition={{ delay: i * 0.12, duration: 0.45, ease: 'easeOut' }}
+              style={{ transformStyle: 'preserve-3d' }}
+            >
+              <CardFace card={c} size="md" />
+            </motion.div>
           ))}
         </div>
       </section>

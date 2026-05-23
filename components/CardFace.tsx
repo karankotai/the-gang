@@ -1,11 +1,13 @@
 'use client'
 import type { Card } from '@/lib/types'
 import { formatRank, SUIT_GLYPH, SUIT_IS_RED } from '@/lib/client/format'
+import { CardBack } from './CardBack'
 
 type Props = {
   card: Card
   size?: 'sm' | 'md' | 'lg'
   className?: string
+  revealed?: boolean   // default true; false renders as a back
 }
 
 const SIZE: Record<NonNullable<Props['size']>, { w: string; h: string; rank: string; corner: string; pip: string }> = {
@@ -14,7 +16,8 @@ const SIZE: Record<NonNullable<Props['size']>, { w: string; h: string; rank: str
   lg: { w: 'w-20', h: 'h-28', rank: 'text-lg', corner: 'text-sm', pip: 'text-5xl' },
 }
 
-export function CardFace({ card, size = 'md', className = '' }: Props) {
+export function CardFace({ card, size = 'md', className = '', revealed }: Props) {
+  if (revealed === false) return <CardBack size={size} className={className} />
   const s = SIZE[size]
   const colorClass = SUIT_IS_RED(card.suit) ? 'text-rose-600' : 'text-stone-900'
   const rankText = formatRank(card.rank)
