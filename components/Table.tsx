@@ -1,7 +1,9 @@
 'use client'
 import { useGameStore } from '@/lib/client/store'
 import type { ChipValue, ClientMessage } from '@/lib/types'
+import { PHASE_COLOR } from '@/lib/types'
 import { CardFace } from '@/components/CardFace'
+import { ChipIcon } from '@/components/ChipIcon'
 
 export function Table({ send }: { send: (m: ClientMessage) => void }) {
   const state = useGameStore(s => s.state)!
@@ -32,9 +34,20 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
               <div className="mt-2 flex gap-1 text-xs">
                 {state.lockedChips.map((l, i) => {
                   const v = Object.entries(l.claims).find(([, id]) => id === p.id)?.[0]
-                  return v ? <span key={i} className="px-2 py-0.5 rounded bg-stone-800 border">{l.phase[0]}:{v}</span> : null
+                  if (!v) return null
+                  return <ChipIcon key={i} value={Number(v)} color={PHASE_COLOR[l.phase]} size={24} />
                 })}
-                {opChip && <span className="px-2 py-0.5 rounded bg-amber-700 border border-amber-500">·{opChip}</span>}
+                {opChip && (
+                  <ChipIcon
+                    value={Number(opChip)}
+                    color={
+                      state.phase === 'preflop' || state.phase === 'flop' || state.phase === 'turn' || state.phase === 'river'
+                        ? PHASE_COLOR[state.phase]
+                        : 'white'
+                    }
+                    size={28}
+                  />
+                )}
               </div>
             </div>
           )
@@ -60,23 +73,21 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
               const mine = holder === myId
               const heldBy = holder ? state.players.find(p => p.id === holder) : null
               const heldByOther = holder != null && !mine
-              const initial = heldBy ? heldBy.name[0]?.toUpperCase() : ''
-              let classes = 'w-12 h-12 rounded-full grid place-items-center font-bold relative '
-              if (mine) classes += 'bg-amber-500 text-stone-900'
-              else if (heldByOther) classes += 'bg-rose-600 text-stone-100 hover:bg-rose-500'
-              else classes += 'bg-stone-200 text-stone-900 hover:bg-amber-300'
+              const initial = heldBy ? heldBy.name[0]?.toUpperCase() : undefined
+              const isClaim = state.phase === 'preflop' || state.phase === 'flop' || state.phase === 'turn' || state.phase === 'river'
+              const currentPhaseColor = isClaim ? PHASE_COLOR[state.phase as Extract<typeof state.phase, 'preflop'|'flop'|'turn'|'river'>] : 'white'
+              const color = mine ? 'mine' : heldByOther ? 'other' : (holder == null ? currentPhaseColor : 'unclaimed')
               return (
-                <button
+                <ChipIcon
                   key={v}
-                  className={classes}
+                  value={v}
+                  color={color}
+                  size={56}
+                  initial={heldByOther ? initial : undefined}
                   title={heldBy ? (mine ? 'Click to return' : `Held by ${heldBy.name} — click to steal`) : 'Click to claim'}
+                  ariaLabel={`Chip ${v}`}
                   onClick={() => send(mine ? { t: 'returnChip' } : { t: 'claimChip', value: v })}
-                >
-                  {v}
-                  {heldByOther && initial && (
-                    <span className="absolute -bottom-1 -right-1 text-[10px] bg-stone-900 text-stone-100 rounded-full w-4 h-4 grid place-items-center border border-stone-700">{initial}</span>
-                  )}
-                </button>
+                />
               )
             })}
           </div>
