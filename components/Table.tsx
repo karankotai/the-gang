@@ -53,12 +53,11 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
                       >
                         <ChipIcon
                           value={Number(opChip)}
-                          color={
-                            state.phase === 'preflop' || state.phase === 'flop' || state.phase === 'turn' || state.phase === 'river'
-                              ? PHASE_COLOR[state.phase]
-                              : 'white'
-                          }
-                          size={28}
+                          color="other"
+                          size={32}
+                          title={`Click to steal chip ${opChip} from ${p.name}`}
+                          ariaLabel={`Steal chip ${opChip} from ${p.name}`}
+                          onClick={() => send({ t: 'claimChip', value: Number(opChip) as ChipValue })}
                         />
                       </motion.div>
                     )}
@@ -95,12 +94,13 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
                 {Array.from({ length: n }, (_, i) => (i + 1) as ChipValue).map(v => {
                   const holder = state.currentChips[v]
                   const mine = holder === myId
-                  const heldBy = holder ? state.players.find(p => p.id === holder) : null
                   const heldByOther = holder != null && !mine
-                  const initial = heldBy ? heldBy.name[0]?.toUpperCase() : undefined
+                  // Opponent-held chips are rendered next to that opponent's panel — not in the pool.
+                  // Rendering them here too would duplicate the layoutId and break the animation.
+                  if (heldByOther) return null
                   const isClaim = state.phase === 'preflop' || state.phase === 'flop' || state.phase === 'turn' || state.phase === 'river'
                   const currentPhaseColor = isClaim ? PHASE_COLOR[state.phase as Extract<typeof state.phase, 'preflop'|'flop'|'turn'|'river'>] : 'white'
-                  const color = mine ? 'mine' : heldByOther ? 'other' : (holder == null ? currentPhaseColor : 'unclaimed')
+                  const color = mine ? 'mine' : currentPhaseColor
                   return (
                     <motion.div
                       key={v}
@@ -112,8 +112,7 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
                         value={v}
                         color={color}
                         size={56}
-                        initial={heldByOther ? initial : undefined}
-                        title={heldBy ? (mine ? 'Click to return' : `Held by ${heldBy.name} — click to steal`) : 'Click to claim'}
+                        title={mine ? 'Click to return' : 'Click to claim'}
                         ariaLabel={`Chip ${v}`}
                         onClick={() => send(mine ? { t: 'returnChip' } : { t: 'claimChip', value: v })}
                       />
