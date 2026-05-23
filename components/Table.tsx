@@ -132,14 +132,23 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
               )) : <span className="text-stone-500">(waiting for deal)</span>}
             </div>
             {['preflop', 'flop', 'turn', 'river'].includes(state.phase) && (
-              <div className="flex justify-center gap-2">
+              <div className="flex flex-col items-center gap-1">
                 <button
-                  className="px-4 py-2 rounded bg-emerald-600 disabled:opacity-40"
+                  className={
+                    'px-4 py-2 rounded font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed ' +
+                    (iAmReady
+                      ? 'bg-emerald-500 text-stone-950 ring-2 ring-emerald-300 shadow-lg shadow-emerald-500/30 active:scale-95'
+                      : 'bg-emerald-900/40 text-emerald-200 border border-emerald-700 hover:bg-emerald-800/60')
+                  }
                   disabled={!myChip}
                   onClick={() => send({ t: 'readyForNextPhase', ready: !iAmReady })}
+                  aria-pressed={iAmReady}
                 >
-                  {iAmReady ? 'Cancel ready' : 'Ready for next phase'}
+                  {iAmReady ? '✓ Ready — click to cancel' : 'Ready for next phase'}
                 </button>
+                <div className="text-xs text-stone-400">
+                  {state.phaseReady.length} / {state.players.filter(p => p.connected).length} ready
+                </div>
               </div>
             )}
             {state.phase === 'showdown' && (
