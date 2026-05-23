@@ -7,7 +7,6 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
   const myId = useGameStore(s => s.myPlayerId)!
   const hole = useGameStore(s => s.holeCards)
   const errors = useGameStore(s => s.errors)
-  const me = state.players.find(p => p.id === myId)!
   const opponents = state.players.filter(p => p.id !== myId)
 
   const n = state.players.length
@@ -134,9 +133,6 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
           <div className="text-center text-2xl font-bold">Game over — {state.heist.totalHeistsWon}/4 heists cleared</div>
         )}
       </section>
-
-      {/* me is used to avoid unused variable warning — accessing seat as a side-effect free read */}
-      {me.seat !== undefined && null}
 
       {errors.length > 0 && (
         <div className="fixed bottom-2 right-2 text-xs text-rose-400">{errors[errors.length - 1]}</div>
