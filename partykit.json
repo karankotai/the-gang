@@ -1,0 +1,5 @@
+{
+  "name": "the-gang",
+  "main": "party/gang.ts",
+  "compatibilityDate": "2025-01-01"
+}
