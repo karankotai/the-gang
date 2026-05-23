@@ -24,3 +24,43 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+:root {
+  /* Wood / felt palette */
+  --felt-wood-1: #3a2410;
+  --felt-wood-2: #2a1808;
+  --felt-wood-3: #1d1006;
+  --rail-amber: #d4a05a;
+  --chip-white: #f4f4ed;
+  --chip-yellow: #f7d35c;
+  --chip-orange: #e08442;
+  --chip-red: #c83a3a;
+  /* Phase-color border tint */
+  --chip-rim: rgba(0, 0, 0, 0.45);
+}
+
+.table-felt {
+  background-color: var(--felt-wood-2);
+  background-image:
+    radial-gradient(ellipse at center, rgba(80, 40, 15, 0.55) 0%, transparent 60%),
+    repeating-linear-gradient(
+      105deg,
+      rgba(255, 220, 180, 0.025) 0px,
+      rgba(255, 220, 180, 0.025) 2px,
+      transparent 2px,
+      transparent 8px
+    ),
+    repeating-linear-gradient(
+      85deg,
+      rgba(0, 0, 0, 0.04) 0px,
+      rgba(0, 0, 0, 0.04) 1px,
+      transparent 1px,
+      transparent 12px
+    ),
+    linear-gradient(180deg, var(--felt-wood-1), var(--felt-wood-3));
+  background-blend-mode: normal;
+}
+
+.card-face {
+  font-family: 'Georgia', 'Times New Roman', serif;
+}
