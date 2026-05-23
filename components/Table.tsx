@@ -3,6 +3,7 @@ import { useGameStore } from '@/lib/client/store'
 import type { ChipValue, ClientMessage } from '@/lib/types'
 import { PHASE_COLOR } from '@/lib/types'
 import { CardFace } from '@/components/CardFace'
+import { ShowdownReveal } from '@/components/ShowdownReveal'
 import { ChipIcon } from '@/components/ChipIcon'
 import { motion, LayoutGroup } from 'framer-motion'
 
@@ -146,18 +147,13 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
           </div>
         )}
         {(state.phase === 'roundResult' || state.phase === 'heistResult') && state.roundResult && (
-          <div className="text-center space-y-2">
-            <div className={'text-2xl font-bold ' + (state.roundResult.won ? 'text-emerald-400' : 'text-rose-400')}>
-              {state.roundResult.won ? 'Round won!' : 'Round lost'}
+          <div className="space-y-3">
+            <ShowdownReveal result={state.roundResult} players={state.players} />
+            <div className="text-center">
+              <button className="px-6 py-2 rounded bg-amber-600 hover:bg-amber-500" onClick={() => send({ t: 'nextRound' })}>
+                Next round
+              </button>
             </div>
-            <ul className="text-sm">
-              {state.roundResult.actualRanking.map((id, i) => (
-                <li key={id}>{i + 1}. {state.players.find(p => p.id === id)?.name} — {state.roundResult!.hands[id].description}</li>
-              ))}
-            </ul>
-            <button className="mt-3 px-6 py-2 rounded bg-amber-600" onClick={() => send({ t: 'nextRound' })}>
-              Next round
-            </button>
           </div>
         )}
         {state.phase === 'gameEnd' && (
