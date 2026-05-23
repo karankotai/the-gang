@@ -57,16 +57,22 @@ export function startHeist(state: RoomState, opts: { seed?: string } = {}): Room
 export function claimChip(state: RoomState, playerId: string, value: ChipValue): RoomState {
   if (!isClaimPhase(state.phase)) return state
   const nextChips: Partial<Record<ChipValue, string | null>> = { ...state.currentChips }
+  // Release any chip the caller currently holds
   for (const k of Object.keys(nextChips)) {
     const kv = Number(k) as ChipValue
     if (nextChips[kv] === playerId) nextChips[kv] = null
   }
-  if (nextChips[value] != null && nextChips[value] !== playerId) return state
+  // If the target chip was held by another player, they lose it (stealing is allowed)
+  const previousHolder = nextChips[value]
   nextChips[value] = playerId
+  // Clear caller from phaseReady (they just acted) and previous holder too (they no longer hold a chip)
+  const nextPhaseReady = state.phaseReady.filter(id =>
+    id !== playerId && id !== previousHolder
+  )
   return {
     ...state,
     currentChips: nextChips,
-    phaseReady: state.phaseReady.filter(id => id !== playerId),
+    phaseReady: nextPhaseReady,
   }
 }
 

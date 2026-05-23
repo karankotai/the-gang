@@ -31,9 +31,9 @@ describe('canClaimChip', () => {
     const s = baseState({ currentChips: { 1: 'a', 2: null, 3: null } })
     expect(canClaimChip(s, 'a', 1)).toBe(true)
   })
-  it('denied: chip held by another player', () => {
+  it('allowed: chip held by another player (steal)', () => {
     const s = baseState({ currentChips: { 1: 'b', 2: null, 3: null } })
-    expect(canClaimChip(s, 'a', 1)).toBe(false)
+    expect(canClaimChip(s, 'a', 1)).toBe(true)
   })
   it('denied: out-of-range value for player count', () => {
     expect(canClaimChip(baseState(), 'a', 4)).toBe(false)

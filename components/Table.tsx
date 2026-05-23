@@ -65,20 +65,24 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
             {Array.from({ length: n }, (_, i) => (i + 1) as ChipValue).map(v => {
               const holder = state.currentChips[v]
               const mine = holder === myId
-              const taken = holder != null && !mine
+              const heldBy = holder ? state.players.find(p => p.id === holder) : null
+              const heldByOther = holder != null && !mine
+              const initial = heldBy ? heldBy.name[0]?.toUpperCase() : ''
+              let classes = 'w-12 h-12 rounded-full grid place-items-center font-bold relative '
+              if (mine) classes += 'bg-amber-500 text-stone-900'
+              else if (heldByOther) classes += 'bg-rose-600 text-stone-100 hover:bg-rose-500'
+              else classes += 'bg-stone-200 text-stone-900 hover:bg-amber-300'
               return (
                 <button
                   key={v}
-                  disabled={taken}
-                  className={
-                    'w-12 h-12 rounded-full grid place-items-center font-bold ' +
-                    (mine ? 'bg-amber-500 text-stone-900' :
-                      taken ? 'bg-stone-700 text-stone-500' :
-                        'bg-stone-200 text-stone-900 hover:bg-amber-300')
-                  }
+                  className={classes}
+                  title={heldBy ? (mine ? 'Click to return' : `Held by ${heldBy.name} — click to steal`) : 'Click to claim'}
                   onClick={() => send(mine ? { t: 'returnChip' } : { t: 'claimChip', value: v })}
                 >
                   {v}
+                  {heldByOther && initial && (
+                    <span className="absolute -bottom-1 -right-1 text-[10px] bg-stone-900 text-stone-100 rounded-full w-4 h-4 grid place-items-center border border-stone-700">{initial}</span>
+                  )}
                 </button>
               )
             })}
@@ -96,13 +100,6 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
         </div>
         {['preflop', 'flop', 'turn', 'river'].includes(state.phase) && (
           <div className="flex justify-center gap-2">
-            <button
-              className="px-4 py-2 rounded bg-stone-700 disabled:opacity-40"
-              disabled={!myChip}
-              onClick={() => send({ t: 'returnChip' })}
-            >
-              Return chip
-            </button>
             <button
               className="px-4 py-2 rounded bg-emerald-600 disabled:opacity-40"
               disabled={!myChip}

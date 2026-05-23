@@ -81,6 +81,22 @@ describe('stateMachine', () => {
     expect(s.phaseReady).toEqual([])
   })
 
+  it('claimChip steals from another player and clears their phaseReady', () => {
+    let s = initialRoomState('R')
+    for (const id of ['a','b','c']) { s = addPlayer(s, { id, name:id, avatar:'' }); s = setReady(s, id, true) }
+    s = startHeist(s, { seed: 'fixed' })
+    // b claims chip 1, then is ready
+    s = claimChip(s, 'b', 1)
+    s = setReadyForNextPhase(s, 'b', true)
+    expect(s.currentChips[1]).toBe('b')
+    expect(s.phaseReady).toContain('b')
+    // a steals chip 1 from b
+    s = claimChip(s, 'a', 1)
+    expect(s.currentChips[1]).toBe('a')
+    expect(s.phaseReady).not.toContain('b')
+    expect(s.phaseReady).not.toContain('a')
+  })
+
   it('resolveShowdown: correct ranking -> won', () => {
     let s = initialRoomState('R')
     for (const id of ['a','b','c']) { s = addPlayer(s, { id, name:id, avatar:'' }); s = setReady(s, id, true) }

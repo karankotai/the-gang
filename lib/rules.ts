@@ -9,13 +9,11 @@ function holderOf(state: RoomState, playerId: string): ChipValue | null {
   return null
 }
 
-export function canClaimChip(state: RoomState, playerId: string, value: ChipValue): boolean {
+export function canClaimChip(state: RoomState, _playerId: string, value: ChipValue): boolean {
   if (!CLAIM_PHASES.has(state.phase)) return false
   const n = state.players.filter(p => p.connected).length
   if (value < 1 || value > n) return false
-  const holder = state.currentChips[value]
-  if (holder == null) return true
-  return holder === playerId
+  return true
 }
 
 export function canReturnChip(state: RoomState, playerId: string): boolean {
