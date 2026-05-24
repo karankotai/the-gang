@@ -1,8 +1,11 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useGameStore } from '@/lib/client/store'
 import { useGameAudio } from '@/lib/client/useGameAudio'
 import { SoundToggle } from '@/components/SoundToggle'
+import { loadHintEnabled } from '@/lib/client/prefs'
+import { handStrengthTier } from '@/lib/handStrength'
+import { HandStrengthBadge } from '@/components/HandStrengthBadge'
 import type { ChipValue, ClientMessage } from '@/lib/types'
 import { PHASE_COLOR, VARIANT_INFO } from '@/lib/types'
 import { CardFace } from '@/components/CardFace'
@@ -18,6 +21,8 @@ import { AbilityBadge } from '@/components/AbilityBadge'
 export function Table({ send }: { send: (m: ClientMessage) => void }) {
   const [soundEnabled, setSoundEnabled] = useState(true)
   useGameAudio(soundEnabled)
+  const [hintEnabled, setHintEnabled] = useState(false)
+  useEffect(() => { setHintEnabled(loadHintEnabled()) }, [])
   const state = useGameStore(s => s.state)!
   const myId = useGameStore(s => s.myPlayerId)!
   const hole = useGameStore(s => s.holeCards)
@@ -36,6 +41,7 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
   const host = state.players.find(p => p.connected)
   const iAmHost = host?.id === myId
   const myAbility = useGameStore(s => s.myAbility)
+  const myTier = hole ? handStrengthTier(hole, state.community) : null
 
   return (
     <LayoutGroup>
@@ -250,6 +256,11 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
                 <CardFace key={i} card={c} size="lg" />
               )) : <span className="text-stone-500">(waiting for deal)</span>}
             </div>
+            {hintEnabled && hole && myTier && (
+              <div className="flex justify-center">
+                <HandStrengthBadge tier={myTier} />
+              </div>
+            )}
             {['preflop', 'flop', 'turn', 'river'].includes(state.phase) && (
               <div className="flex flex-col items-center gap-1">
                 <button

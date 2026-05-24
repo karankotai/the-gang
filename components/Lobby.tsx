@@ -1,8 +1,9 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useGameStore } from '@/lib/client/store'
 import type { ClientMessage } from '@/lib/types'
 import { VariantPicker } from '@/components/VariantPicker'
+import { loadHintEnabled, saveHintEnabled } from '@/lib/client/prefs'
 
 export function Lobby({ send }: { send: (m: ClientMessage) => void }) {
   const state = useGameStore(s => s.state)!
@@ -12,6 +13,8 @@ export function Lobby({ send }: { send: (m: ClientMessage) => void }) {
   const iAmHost = host?.id === myId
   const [name, setName] = useState(me?.name ?? 'Player')
   const [copied, setCopied] = useState(false)
+  const [hintEnabled, setHintEnabled] = useState(false)
+  useEffect(() => { setHintEnabled(loadHintEnabled()) }, [])
 
   const copyLink = () => {
     if (typeof window === 'undefined') return
@@ -99,6 +102,21 @@ export function Lobby({ send }: { send: (m: ClientMessage) => void }) {
           <p className="text-xs text-stone-400">
             Each player gets a random single-use ability per heist (Scout / Mole / Wildcard / Negotiator).
             {!iAmHost && ' Only the host can toggle this.'}
+          </p>
+        </section>
+
+        <section className="bg-stone-900/40 p-4 rounded border border-stone-800 space-y-2">
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <input
+              type="checkbox"
+              checked={hintEnabled}
+              onChange={e => { setHintEnabled(e.target.checked); saveHintEnabled(e.target.checked) }}
+              className="accent-emerald-500"
+            />
+            <span className="font-semibold">Show hand-strength hint</span>
+          </label>
+          <p className="text-xs text-stone-400">
+            Adds a small &quot;Likely strong/medium/weak&quot; badge next to your own hand. Local-only — others don&apos;t see it.
           </p>
         </section>
 
