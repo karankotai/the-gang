@@ -30,3 +30,22 @@ export function allPhaseReady(state: RoomState): boolean {
   const connected = state.players.filter(p => p.connected).map(p => p.id)
   return connected.every(id => state.phaseReady.includes(id))
 }
+
+export function canProposeKick(state: RoomState, proposerId: string, targetId: string): boolean {
+  if (proposerId === targetId) return false
+  if (state.activeKick) return false
+  const target = state.players.find(p => p.id === targetId)
+  const proposer = state.players.find(p => p.id === proposerId)
+  if (!target || !proposer) return false
+  if (target.connected) return false
+  if (!proposer.connected) return false
+  return true
+}
+
+export function kickVoteSatisfied(state: RoomState): boolean {
+  const k = state.activeKick
+  if (!k) return false
+  const connectedNonTarget = state.players.filter(p => p.connected && p.id !== k.targetId)
+  const yesVotes = connectedNonTarget.filter(p => k.votes[p.id] === true).length
+  return yesVotes > connectedNonTarget.length / 2
+}
