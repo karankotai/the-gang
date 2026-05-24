@@ -14,9 +14,12 @@ export default class GangServer implements Party.Server {
   community: Card[] = []
   connByPlayer: Map<string, Party.Connection> = new Map()
   phaseTimers: Map<string, ReturnType<typeof setTimeout>> = new Map()
+  lastActivityMs: number = Date.now()
+  idleReaperTimer: ReturnType<typeof setTimeout> | null = null
 
   constructor(readonly party: Party.Room) {
     this.room = initialRoomState(party.id)
+    this.rearmIdleReaper()
   }
 
   static onBeforeConnect(req: Party.Request, _lobby: Party.Lobby, _ctx: Party.ExecutionContext) {
@@ -27,6 +30,7 @@ export default class GangServer implements Party.Server {
   }
 
   onConnect(connection: Party.Connection, ctx: Party.ConnectionContext) {
+    this.touchActivity()
     const url = new URL(ctx.request.url)
     const playerId = url.searchParams.get('playerId')
     if (!playerId) { connection.close(); return }
@@ -73,6 +77,7 @@ export default class GangServer implements Party.Server {
   }
 
   onMessage(message: string, sender: Party.Connection) {
+    this.touchActivity()
     const playerId = (sender.state as any)?.playerId as string
     let msg: ClientMessage
     try { msg = JSON.parse(message) } catch { return }
@@ -190,6 +195,33 @@ export default class GangServer implements Party.Server {
     const result = resolveShowdown(this.room, hc, this.community)
     this.room = applyRoundResult(this.room, result)
     this.broadcastState()
+  }
+
+  private touchActivity() {
+    this.lastActivityMs = Date.now()
+    this.rearmIdleReaper()
+  }
+
+  private rearmIdleReaper() {
+    if (this.idleReaperTimer) clearTimeout(this.idleReaperTimer)
+    const IDLE_MS = 30 * 60 * 1000
+    this.idleReaperTimer = setTimeout(() => this.maybeReap(), IDLE_MS)
+  }
+
+  private maybeReap() {
+    const idleFor = Date.now() - this.lastActivityMs
+    if (idleFor < 30 * 60 * 1000) { this.rearmIdleReaper(); return }
+    this.clearPhaseTimers()
+    this.holeCards.clear()
+    this.community = []
+    this.room = initialRoomState(this.party.id)
+    for (const conn of this.party.getConnections()) {
+      try {
+        conn.send(JSON.stringify({ t: 'event', text: 'Room reset due to inactivity' } satisfies ServerMessage))
+        conn.close()
+      } catch {}
+    }
+    this.connByPlayer.clear()
   }
 
   private clearPhaseTimers() {
