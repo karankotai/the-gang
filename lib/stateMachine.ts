@@ -199,9 +199,12 @@ export function resolveShowdown(
     const best = evaluateBest(holeCards[p.id], community)
     hands[p.id] = { cards: [...holeCards[p.id], ...community], description: describeHand(best), rank: best }
   }
-  const actualRanking = state.players
+  const rawActualRanking = state.players
     .map(p => p.id)
     .sort((a, b) => compareHands(hands[a].rank, hands[b].rank))
+  const actualRanking = state.variant === 'reverseRank'
+    ? [...rawActualRanking].reverse()
+    : rawActualRanking
 
   const riverLocked = state.lockedChips.find(l => l.phase === 'river')
   const claimedRanking: string[] = []

@@ -216,4 +216,26 @@ describe('stateMachine', () => {
     expect(s.phase).toBe('river')
     expect(s.community).toHaveLength(5)
   })
+
+  it('reverseRank: claimed ranking is compared against reversed actual ranking', () => {
+    let s = initialRoomState('R')
+    s = setVariant(s, 'reverseRank')
+    for (const id of ['a','b','c']) { s = addPlayer(s, { id, name:id, avatar:'' }); s = setReady(s, id, true) }
+    s = startHeist(s, { seed: 'r', nowMs: 0 })
+    s = { ...s, phase: 'showdown' }
+    s = { ...s, lockedChips: [{ phase: 'river', claims: { 1:'a', 2:'b', 3:'c' } }] }
+
+    const result = resolveShowdown(s, {
+      a: [{rank:14, suit:'S'},{rank:14, suit:'H'}],
+      b: [{rank:13, suit:'S'},{rank:13, suit:'H'}],
+      c: [{rank:2,  suit:'S'},{rank:5,  suit:'D'}],
+    }, [
+      {rank:7,suit:'C'},{rank:8,suit:'D'},{rank:9,suit:'H'},{rank:3,suit:'C'},{rank:4,suit:'D'},
+    ])
+
+    // actualRanking in reverseRank is strongest -> weakest = a, b, c
+    expect(result.actualRanking).toEqual(['a','b','c'])
+    // chip 1 = a, who is the strongest. Match -> won = true.
+    expect(result.won).toBe(true)
+  })
 })
