@@ -2,11 +2,14 @@
 import { useState } from 'react'
 import { useGameStore } from '@/lib/client/store'
 import type { ClientMessage } from '@/lib/types'
+import { VariantPicker } from '@/components/VariantPicker'
 
 export function Lobby({ send }: { send: (m: ClientMessage) => void }) {
   const state = useGameStore(s => s.state)!
   const myId = useGameStore(s => s.myPlayerId)!
   const me = state.players.find(p => p.id === myId)
+  const host = state.players.find(p => p.connected)
+  const iAmHost = host?.id === myId
   const [name, setName] = useState(me?.name ?? 'Player')
   const [copied, setCopied] = useState(false)
 
@@ -73,6 +76,13 @@ export function Lobby({ send }: { send: (m: ClientMessage) => void }) {
               </li>
             ))}
           </ul>
+        </section>
+
+        <section className="bg-stone-900/40 p-4 rounded border border-stone-800">
+          <VariantPicker variant={state.variant} disabled={!iAmHost} send={send} />
+          {!iAmHost && (
+            <div className="text-xs text-stone-500 mt-1">Only the host can change the variant.</div>
+          )}
         </section>
 
         <div className="flex gap-2">
