@@ -44,7 +44,7 @@ export function useGameSocket(roomCode: string) {
           case 'error': addError(msg.code + ': ' + msg.msg); break
           case 'ability': setMyAbility(msg.ability); break
           case 'peek': setScoutPeek(msg.card); break
-          case 'molePeek': setMolePeek({ targetId: msg.targetId, holeCards: msg.holeCards }); break
+          case 'molePeek': setMolePeek({ targetId: msg.targetId, holeCard: msg.holeCard }); break
         }
       } catch {}
     })

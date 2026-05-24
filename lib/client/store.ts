@@ -2,7 +2,7 @@
 import { create } from 'zustand'
 import type { Card, RoomState, AbilityType } from '../types'
 
-type MolePeek = { targetId: string; holeCards: [Card, Card] }
+type MolePeek = { targetId: string; holeCard: Card }
 
 type State = {
   state: RoomState | null

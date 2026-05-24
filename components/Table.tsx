@@ -12,7 +12,6 @@ import { CardFace } from '@/components/CardFace'
 import { ShowdownReveal } from '@/components/ShowdownReveal'
 import { ChipIcon } from '@/components/ChipIcon'
 import { HeistProgress } from '@/components/HeistProgress'
-import { EventLog } from '@/components/EventLog'
 import { motion, LayoutGroup } from 'framer-motion'
 import { Countdown } from '@/components/Countdown'
 import { AbilityPanel } from '@/components/AbilityPanel'
@@ -94,14 +93,14 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
                 <div
                   key={p.id}
                   className={
-                    'flex-shrink-0 min-w-[140px] md:min-w-0 p-3 rounded border ' +
+                    'flex-shrink-0 min-w-[180px] md:min-w-0 p-4 rounded border ' +
                     (isMe
                       ? 'bg-amber-950/50 border-amber-600/60 ring-1 ring-amber-500/40'
                       : 'bg-stone-900/60 border-stone-800')
                   }
                 >
                   <div className="flex items-center justify-between gap-1">
-                    <div className="font-semibold truncate flex items-center gap-1">
+                    <div className="font-semibold truncate flex items-center gap-1 text-base">
                       <span className="truncate">{p.name}</span>
                       {p.id === host?.id && (
                         <span
@@ -124,7 +123,7 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
                     {state.lockedChips.map((l, i) => {
                       const v = Object.entries(l.claims).find(([, id]) => id === p.id)?.[0]
                       if (!v) return null
-                      return <ChipIcon key={i} value={Number(v)} color={PHASE_COLOR[l.phase]} size={24} />
+                      return <ChipIcon key={i} value={Number(v)} color={PHASE_COLOR[l.phase]} size={28} />
                     })}
                     {pChip && (
                       <motion.div
@@ -135,7 +134,7 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
                         <ChipIcon
                           value={Number(pChip)}
                           color={isMe ? 'mine' : 'other'}
-                          size={32}
+                          size={44}
                           title={isMe ? 'Click to return' : `Click to steal chip ${pChip} from ${p.name}`}
                           ariaLabel={isMe ? `Return chip ${pChip}` : `Steal chip ${pChip} from ${p.name}`}
                           onClick={() =>
@@ -238,15 +237,18 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
             </section>
           )}
 
+          {/* AbilityPanel: inline on mobile (<lg), hidden on lg+ where it lives in the right rail */}
           {state.abilitiesEnabled && myAbility && (
-            <AbilityPanel
-              ability={myAbility}
-              used={!!state.abilityUsed[myId]}
-              phase={state.phase}
-              players={state.players}
-              myId={myId}
-              send={send}
-            />
+            <div className="lg:hidden">
+              <AbilityPanel
+                ability={myAbility}
+                used={!!state.abilityUsed[myId]}
+                phase={state.phase}
+                players={state.players}
+                myId={myId}
+                send={send}
+              />
+            </div>
           )}
 
           <section className="space-y-2 sticky bottom-0 bg-stone-950/95 backdrop-blur border-t border-stone-800 -mx-4 px-4 py-3 md:static md:mx-0 md:p-0 md:bg-transparent md:border-0 md:backdrop-blur-none">
@@ -256,7 +258,7 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
                 <CardFace key={i} card={c} size="lg" />
               )) : <span className="text-stone-500">(waiting for deal)</span>}
             </div>
-            {hintEnabled && hole && myTier && (
+            {hintEnabled === true && hole && myTier && (
               <div className="flex justify-center">
                 <HandStrengthBadge tier={myTier} />
               </div>
@@ -317,10 +319,18 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
           )}
         </div>
 
-        <aside className="hidden lg:block bg-stone-900/50 rounded border border-stone-800 p-2 h-fit sticky top-4">
-          <h3 className="text-xs uppercase tracking-wide text-stone-400 px-2 py-1">Event log</h3>
-          <EventLog />
-        </aside>
+        {state.abilitiesEnabled && myAbility && (
+          <aside className="hidden lg:block bg-stone-900/50 rounded border border-stone-800 p-2 h-fit sticky top-4">
+            <AbilityPanel
+              ability={myAbility}
+              used={!!state.abilityUsed[myId]}
+              phase={state.phase}
+              players={state.players}
+              myId={myId}
+              send={send}
+            />
+          </aside>
+        )}
       </div>
     </main>
     </LayoutGroup>

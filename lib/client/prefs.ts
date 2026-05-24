@@ -2,6 +2,7 @@
 
 const KEY_SOUND = 'the-gang:soundEnabled'
 const KEY_HINT = 'the-gang:strengthHintEnabled'
+const KEY_DISPLAY_NAME = 'the-gang:displayName'
 
 export function loadSoundEnabled(): boolean {
   if (typeof window === 'undefined') return true
@@ -23,4 +24,14 @@ export function loadHintEnabled(): boolean {
 export function saveHintEnabled(enabled: boolean) {
   if (typeof window === 'undefined') return
   window.localStorage.setItem(KEY_HINT, String(enabled))
+}
+
+export function loadDisplayName(): string {
+  if (typeof window === 'undefined') return ''
+  return window.localStorage.getItem(KEY_DISPLAY_NAME) ?? ''
+}
+
+export function saveDisplayName(name: string) {
+  if (typeof window === 'undefined') return
+  window.localStorage.setItem(KEY_DISPLAY_NAME, name)
 }

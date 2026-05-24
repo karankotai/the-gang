@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { useGameStore } from '@/lib/client/store'
 import type { ClientMessage } from '@/lib/types'
 import { VariantPicker } from '@/components/VariantPicker'
-import { loadHintEnabled, saveHintEnabled } from '@/lib/client/prefs'
+import { loadHintEnabled, saveHintEnabled, loadDisplayName, saveDisplayName } from '@/lib/client/prefs'
 
 export function Lobby({ send }: { send: (m: ClientMessage) => void }) {
   const state = useGameStore(s => s.state)!
@@ -11,7 +11,10 @@ export function Lobby({ send }: { send: (m: ClientMessage) => void }) {
   const me = state.players.find(p => p.id === myId)
   const host = state.players.find(p => p.connected)
   const iAmHost = host?.id === myId
-  const [name, setName] = useState(me?.name ?? 'Player')
+  const [name, setName] = useState(() => {
+    const saved = loadDisplayName()
+    return saved || me?.name || 'Player'
+  })
   const [copied, setCopied] = useState(false)
   const [hintEnabled, setHintEnabled] = useState(false)
   useEffect(() => { setHintEnabled(loadHintEnabled()) }, [])
@@ -48,13 +51,13 @@ export function Lobby({ send }: { send: (m: ClientMessage) => void }) {
             <input
               value={name}
               onChange={e => setName(e.target.value)}
-              onBlur={() => send({ t: 'setIdentity', name, avatar: '' })}
+              onBlur={() => { saveDisplayName(name); send({ t: 'setIdentity', name, avatar: '' }) }}
               className="flex-1 px-3 py-2 rounded bg-stone-800 border border-stone-700 focus:border-amber-500 outline-none"
               maxLength={20}
             />
             <button
               className="px-4 py-2 rounded bg-stone-700 hover:bg-stone-600"
-              onClick={() => send({ t: 'setIdentity', name, avatar: '' })}
+              onClick={() => { saveDisplayName(name); send({ t: 'setIdentity', name, avatar: '' }) }}
             >
               Save
             </button>

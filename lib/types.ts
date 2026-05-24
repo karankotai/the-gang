@@ -133,4 +133,4 @@ export type ServerMessage =
   | { t: 'event'; text: string }
   | { t: 'ability'; ability: AbilityType }
   | { t: 'peek'; card: Card }
-  | { t: 'molePeek'; targetId: string; holeCards: [Card, Card] }
+  | { t: 'molePeek'; targetId: string; holeCard: Card }

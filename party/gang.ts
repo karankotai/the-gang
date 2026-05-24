@@ -210,8 +210,10 @@ export default class GangServer implements Party.Server {
         const conn = this.connByPlayer.get(playerId)
         if (conn) {
           try {
+            const pickIndex = Math.floor(Math.random() * 2)
+            const holeCard = targetHole[pickIndex]
             conn.send(JSON.stringify({
-              t: 'molePeek', targetId: msg.targetId, holeCards: targetHole,
+              t: 'molePeek', targetId: msg.targetId, holeCard,
             } satisfies ServerMessage))
           } catch {}
         }
@@ -284,7 +286,8 @@ export default class GangServer implements Party.Server {
   private assignAbilities() {
     this.playerAbilities.clear()
     if (!this.room.abilitiesEnabled) return
-    const choices: AbilityType[] = ['scout', 'mole', 'wildcard', 'negotiator']
+    const choices: AbilityType[] = ['scout', 'mole', 'wildcard']
+    if (this.room.variant === 'lockedEarly') choices.push('negotiator')
     for (const p of this.room.players) {
       const pick = choices[Math.floor(Math.random() * choices.length)]
       this.playerAbilities.set(p.id, pick)

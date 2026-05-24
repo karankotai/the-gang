@@ -58,7 +58,8 @@ export function playWin() {
 }
 
 export function playLoss() {
-  playTone({ frequency: 392.0,  durationMs: 160, type: 'sawtooth', startGain: 0.16 })
-  playTone({ frequency: 329.63, durationMs: 160, type: 'sawtooth', startGain: 0.16, delayMs: 140 })
-  playTone({ frequency: 261.63, durationMs: 320, type: 'sawtooth', startGain: 0.18, delayMs: 280 })
+  // Soft, low "fwoom" — single sine tone with slow fade
+  playTone({ frequency: 196.0, durationMs: 600, type: 'sine', startGain: 0.22, endGain: 0.001 })
+  // Subtle low-octave undertone for body
+  playTone({ frequency: 98.0,  durationMs: 700, type: 'sine', startGain: 0.12, endGain: 0.001, delayMs: 40 })
 }

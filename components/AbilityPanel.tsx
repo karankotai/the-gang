@@ -99,10 +99,9 @@ export function AbilityPanel({ ability, used, phase, players, myId, send }: Prop
       {molePeek && (
         <div className="flex items-center gap-2 mt-2">
           <span className="text-xs text-violet-300">
-            {players.find(p => p.id === molePeek.targetId)?.name ?? 'Target'}&apos;s hand:
+            {players.find(p => p.id === molePeek.targetId)?.name ?? 'Target'}&apos;s hand (one card):
           </span>
-          <CardFace card={molePeek.holeCards[0]} size="sm" />
-          <CardFace card={molePeek.holeCards[1]} size="sm" />
+          <CardFace card={molePeek.holeCard} size="sm" />
           <button onClick={() => setMolePeek(null)} className="ml-auto text-xs text-stone-400 hover:text-stone-200">dismiss</button>
         </div>
       )}
