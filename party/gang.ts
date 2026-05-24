@@ -249,6 +249,19 @@ export default class GangServer implements Party.Server {
         this.room = markAbilityUsed(this.room, playerId)
         break
       }
+      case 'abilityNegotiator': {
+        if (!this.room.abilitiesEnabled) return this.err(playerId, 'ABILITIES_OFF')
+        if (this.playerAbilities.get(playerId) !== 'negotiator') return this.err(playerId, 'WRONG_ABILITY')
+        if (this.room.abilityUsed[playerId]) return this.err(playerId, 'ABILITY_USED')
+        if (!(this.room.phase === 'preflop' || this.room.phase === 'flop' || this.room.phase === 'turn' || this.room.phase === 'river')) {
+          return this.err(playerId, 'BAD_PHASE')
+        }
+        const before = this.room
+        this.room = applyNegotiatorSwap(this.room, msg.aId, msg.bId)
+        if (this.room === before) return this.err(playerId, 'NEGOTIATOR_NOOP')
+        this.room = markAbilityUsed(this.room, playerId)
+        break
+      }
       case 'endGame':
         if (this.room.phase === 'lobby') return
         this.clearPhaseTimers()
