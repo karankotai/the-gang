@@ -4,6 +4,8 @@ import type { Card, RoomState, AbilityType } from '../types'
 
 type MolePeek = { targetId: string; holeCard: Card }
 
+export type ConnectionStatus = 'connecting' | 'open' | 'closed' | 'error'
+
 type State = {
   state: RoomState | null
   myPlayerId: string | null
@@ -13,6 +15,7 @@ type State = {
   myAbility: AbilityType | null
   scoutPeek: Card | null
   molePeek: MolePeek | null
+  connectionStatus: ConnectionStatus
   setState: (s: RoomState) => void
   setHoleCards: (c: [Card, Card]) => void
   setMyPlayerId: (id: string) => void
@@ -21,6 +24,7 @@ type State = {
   setMyAbility: (a: AbilityType | null) => void
   setScoutPeek: (c: Card | null) => void
   setMolePeek: (m: MolePeek | null) => void
+  setConnectionStatus: (s: ConnectionStatus) => void
   reset: () => void
 }
 
@@ -33,6 +37,7 @@ export const useGameStore = create<State>(set => ({
   myAbility: null,
   scoutPeek: null,
   molePeek: null,
+  connectionStatus: 'connecting',
   setState: s => set({ state: s }),
   setHoleCards: c => set({ holeCards: c }),
   setMyPlayerId: id => set({ myPlayerId: id }),
@@ -41,9 +46,11 @@ export const useGameStore = create<State>(set => ({
   setMyAbility: a => set({ myAbility: a }),
   setScoutPeek: c => set({ scoutPeek: c }),
   setMolePeek: m => set({ molePeek: m }),
+  setConnectionStatus: s => set({ connectionStatus: s }),
   reset: () => set({
     state: null, myPlayerId: null, holeCards: null,
     events: [], errors: [],
     myAbility: null, scoutPeek: null, molePeek: null,
+    connectionStatus: 'connecting',
   }),
 }))
