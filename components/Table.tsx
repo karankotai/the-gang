@@ -9,6 +9,8 @@ import { HeistProgress } from '@/components/HeistProgress'
 import { EventLog } from '@/components/EventLog'
 import { motion, LayoutGroup } from 'framer-motion'
 import { Countdown } from '@/components/Countdown'
+import { AbilityPanel } from '@/components/AbilityPanel'
+import { AbilityBadge } from '@/components/AbilityBadge'
 
 export function Table({ send }: { send: (m: ClientMessage) => void }) {
   const state = useGameStore(s => s.state)!
@@ -28,6 +30,7 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
   const iAmReady = state.phaseReady.includes(myId)
   const host = state.players.find(p => p.connected)
   const iAmHost = host?.id === myId
+  const myAbility = useGameStore(s => s.myAbility)
 
   return (
     <LayoutGroup>
@@ -95,6 +98,7 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
                         </span>
                       )}
                       {isMe && <span className="text-amber-300 text-xs">(you)</span>}
+                      {state.abilitiesEnabled && <AbilityBadge used={!!state.abilityUsed[p.id]} />}
                     </div>
                     <div className="flex items-center gap-1">
                       {p.connected && <Countdown deadlineMs={state.phaseDeadlineMs[p.id]} />}
@@ -218,6 +222,17 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
               </div>
               <div className="text-center text-xs text-stone-400">Lowest ← → Highest</div>
             </section>
+          )}
+
+          {state.abilitiesEnabled && myAbility && (
+            <AbilityPanel
+              ability={myAbility}
+              used={!!state.abilityUsed[myId]}
+              phase={state.phase}
+              players={state.players}
+              myId={myId}
+              send={send}
+            />
           )}
 
           <section className="space-y-2 sticky bottom-0 bg-stone-950/95 backdrop-blur border-t border-stone-800 -mx-4 px-4 py-3 md:static md:mx-0 md:p-0 md:bg-transparent md:border-0 md:backdrop-blur-none">
