@@ -23,6 +23,8 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
   const n = state.players.length
   const myChip = Object.entries(state.currentChips).find(([, v]) => v === myId)?.[0]
   const iAmReady = state.phaseReady.includes(myId)
+  const host = state.players.find(p => p.connected)
+  const iAmHost = host?.id === myId
 
   return (
     <LayoutGroup>
@@ -51,10 +53,18 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
                       : 'bg-stone-900/60 border-stone-800')
                   }
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="font-semibold truncate">
-                      {p.name}
-                      {isMe && <span className="text-amber-300 text-xs ml-1">(you)</span>}
+                  <div className="flex items-center justify-between gap-1">
+                    <div className="font-semibold truncate flex items-center gap-1">
+                      <span className="truncate">{p.name}</span>
+                      {p.id === host?.id && (
+                        <span
+                          title="Host — controls Start showdown"
+                          className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-amber-700/70 text-amber-50 border border-amber-500/50"
+                        >
+                          Host
+                        </span>
+                      )}
+                      {isMe && <span className="text-amber-300 text-xs">(you)</span>}
                     </div>
                     {isReady && <span className="text-emerald-400 text-xs">✓</span>}
                   </div>
@@ -175,12 +185,18 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
             )}
             {state.phase === 'showdown' && (
               <div className="flex justify-center">
-                <button
-                  className="px-6 py-3 rounded bg-amber-500 text-stone-900 font-bold"
-                  onClick={() => send({ t: 'agreeShowdown' })}
-                >
-                  Start showdown
-                </button>
+                {iAmHost ? (
+                  <button
+                    className="px-6 py-3 rounded bg-amber-500 text-stone-900 font-bold hover:bg-amber-400 active:scale-95 transition-transform shadow-lg shadow-amber-500/30"
+                    onClick={() => send({ t: 'agreeShowdown' })}
+                  >
+                    Start showdown
+                  </button>
+                ) : (
+                  <div className="text-stone-300 text-sm italic">
+                    Waiting for <span className="text-amber-300 font-semibold not-italic">{host?.name ?? 'host'}</span> to start the showdown…
+                  </div>
+                )}
               </div>
             )}
             {(state.phase === 'roundResult' || state.phase === 'heistResult') && state.roundResult && (

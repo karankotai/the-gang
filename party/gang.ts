@@ -98,13 +98,13 @@ export default class GangServer implements Party.Server {
         }
         // Fall through to broadcast so other clients see the updated phaseReady count.
         break
-      case 'agreeShowdown':
+      case 'agreeShowdown': {
         if (this.room.phase !== 'showdown') return this.err(playerId, 'NOT_SHOWDOWN')
-        if (!this.room.showdownAgreed.includes(playerId)) {
-          this.room = { ...this.room, showdownAgreed: [...this.room.showdownAgreed, playerId] }
-        }
-        if (this.allShowdownAgreed()) this.runShowdown()
-        break
+        const hostId = this.room.players.find(p => p.connected)?.id
+        if (playerId !== hostId) return this.err(playerId, 'NOT_HOST')
+        this.runShowdown()
+        return
+      }
       case 'nextRound':
         if (this.room.phase !== 'roundResult' && this.room.phase !== 'heistResult') return
         this.room = nextRoundOrHeist(this.room)
