@@ -41,6 +41,13 @@ export type HeistState = {
   totalHeistsWon: number
 }
 
+export type KickProposal = {
+  targetId: string
+  proposerId: string
+  votes: Record<string, boolean>
+  startedMs: number
+}
+
 export type LockedPhase = {
   phase: Extract<Phase, 'preflop'|'flop'|'turn'|'river'>
   claims: Partial<Record<ChipValue, string>>
@@ -65,6 +72,7 @@ export type RoomState = {
   showdownAgreed: string[]
   heist: HeistState
   roundResult: RoundResult | null
+  activeKick: KickProposal | null
 }
 
 // Wire messages

@@ -19,6 +19,7 @@ function baseState(over: Partial<RoomState> = {}): RoomState {
     showdownAgreed: [],
     heist: { number: 1, roundsWon: 0, roundsLost: 0, totalHeistsWon: 0 },
     roundResult: null,
+    activeKick: null,
     ...over,
   }
 }
