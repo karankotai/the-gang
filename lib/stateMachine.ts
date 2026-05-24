@@ -39,6 +39,28 @@ export function setConnected(state: RoomState, playerId: string, connected: bool
   return { ...state, players: state.players.map(p => p.id === playerId ? { ...p, connected } : p) }
 }
 
+export function removePlayer(state: RoomState, playerId: string): RoomState {
+  const players = state.players.filter(p => p.id !== playerId).map((p, i) => ({ ...p, seat: i }))
+  const currentChips: Partial<Record<ChipValue, string | null>> = { ...state.currentChips }
+  for (const k of Object.keys(currentChips)) {
+    const kv = Number(k) as ChipValue
+    if (currentChips[kv] === playerId) currentChips[kv] = null
+  }
+  const lockedChips = state.lockedChips.map(l => {
+    const claims: Partial<Record<ChipValue, string>> = {}
+    for (const [k, id] of Object.entries(l.claims)) {
+      if (id !== playerId) claims[Number(k) as ChipValue] = id
+    }
+    return { ...l, claims }
+  })
+  const phaseReady = state.phaseReady.filter(id => id !== playerId)
+  const showdownAgreed = state.showdownAgreed.filter(id => id !== playerId)
+  const phaseDeadlineMs = { ...state.phaseDeadlineMs }
+  delete phaseDeadlineMs[playerId]
+  const activeKick = state.activeKick && state.activeKick.targetId === playerId ? null : state.activeKick
+  return { ...state, players, currentChips, lockedChips, phaseReady, showdownAgreed, phaseDeadlineMs, activeKick }
+}
+
 export function setIdentity(state: RoomState, playerId: string, name: string, avatar: string): RoomState {
   return { ...state, players: state.players.map(p => p.id === playerId ? { ...p, name, avatar } : p) }
 }

@@ -9,6 +9,7 @@ import {
   setReadyForNextPhase,
   advancePhase,
   resolveShowdown,
+  removePlayer,
 } from '../stateMachine'
 import { deal } from '../dealer'
 
@@ -121,6 +122,26 @@ describe('stateMachine', () => {
     expect(s.phaseDeadlineMs.a).toBe(nowMs + 90_000)
     expect(s.phaseDeadlineMs.b).toBe(nowMs + 90_000)
     expect(s.phaseDeadlineMs.c).toBe(nowMs + 90_000)
+  })
+
+  it('removePlayer drops the player and frees their chip', () => {
+    let s = initialRoomState('R')
+    for (const id of ['a','b','c']) { s = addPlayer(s, { id, name:id, avatar:'' }); s = setReady(s, id, true) }
+    s = startHeist(s, { seed: 'fixed', nowMs: 1 })
+    s = claimChip(s, 'b', 2)
+    s = removePlayer(s, 'b')
+    expect(s.players.map(p => p.id)).toEqual(['a','c'])
+    expect(s.currentChips[2]).toBe(null)
+    expect(s.phaseReady.includes('b')).toBe(false)
+    expect(s.phaseDeadlineMs.b).toBeUndefined()
+  })
+
+  it('removePlayer cancels an active kick proposal targeting the removed id', () => {
+    let s = initialRoomState('R')
+    for (const id of ['a','b','c']) { s = addPlayer(s, { id, name:id, avatar:'' }); s = setReady(s, id, true) }
+    s = { ...s, activeKick: { targetId: 'b', proposerId: 'a', votes: { a: true }, startedMs: 1 } }
+    s = removePlayer(s, 'b')
+    expect(s.activeKick).toBeNull()
   })
 
   it('advancePhase resets phaseDeadlineMs for every connected player', () => {
