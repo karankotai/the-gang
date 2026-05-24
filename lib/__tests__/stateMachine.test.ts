@@ -15,6 +15,7 @@ import {
   setAbilitiesEnabled,
   markAbilityUsed,
   nextRoundOrHeist,
+  applyNegotiatorSwap,
 } from '../stateMachine'
 import { deal } from '../dealer'
 
@@ -290,6 +291,31 @@ describe('stateMachine', () => {
     s = nextRoundOrHeist(s, 100)
     expect(s.phase).toBe('preflop')
     expect(s.abilityUsed).toEqual({})
+  })
+
+  it('applyNegotiatorSwap swaps two players current chips and clears their phaseReady', () => {
+    let s = initialRoomState('R')
+    for (const id of ['a','b','c']) { s = addPlayer(s, { id, name:id, avatar:'' }); s = setReady(s, id, true) }
+    s = startHeist(s, { seed: 's', nowMs: 0 })
+    s = claimChip(s, 'a', 1)
+    s = claimChip(s, 'b', 2)
+    s = setReadyForNextPhase(s, 'a', true)
+    s = setReadyForNextPhase(s, 'b', true)
+    s = applyNegotiatorSwap(s, 'a', 'b')
+    expect(s.currentChips[1]).toBe('b')
+    expect(s.currentChips[2]).toBe('a')
+    expect(s.phaseReady.includes('a')).toBe(false)
+    expect(s.phaseReady.includes('b')).toBe(false)
+  })
+
+  it('applyNegotiatorSwap is a no-op when either player has no chip', () => {
+    let s = initialRoomState('R')
+    for (const id of ['a','b','c']) { s = addPlayer(s, { id, name:id, avatar:'' }); s = setReady(s, id, true) }
+    s = startHeist(s, { seed: 's', nowMs: 0 })
+    s = claimChip(s, 'a', 1)
+    const before = s
+    s = applyNegotiatorSwap(s, 'a', 'b')
+    expect(s).toBe(before)
   })
 
   it('reverseRank: claimed ranking is compared against reversed actual ranking', () => {

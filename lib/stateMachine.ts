@@ -159,6 +159,27 @@ export function claimChip(state: RoomState, playerId: string, value: ChipValue):
   }
 }
 
+export function applyNegotiatorSwap(state: RoomState, aId: string, bId: string): RoomState {
+  if (aId === bId) return state
+  const findChip = (id: string): ChipValue | null => {
+    for (const [k, v] of Object.entries(state.currentChips)) {
+      if (v === id) return Number(k) as ChipValue
+    }
+    return null
+  }
+  const aChip = findChip(aId)
+  const bChip = findChip(bId)
+  if (aChip == null || bChip == null) return state
+  const next: Partial<Record<ChipValue, string | null>> = { ...state.currentChips }
+  next[aChip] = bId
+  next[bChip] = aId
+  return {
+    ...state,
+    currentChips: next,
+    phaseReady: state.phaseReady.filter(id => id !== aId && id !== bId),
+  }
+}
+
 export function returnChip(state: RoomState, playerId: string): RoomState {
   if (!isClaimPhase(state.phase)) return state
   const nextChips: Partial<Record<ChipValue, string | null>> = { ...state.currentChips }
