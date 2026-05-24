@@ -165,7 +165,10 @@ export function advancePhase(state: RoomState, community?: Card[], nowMs?: numbe
     let newCommunity: Card[]
     if (np === 'flop') newCommunity = fullBoard.slice(0, 3)
     else if (np === 'turn') newCommunity = fullBoard.slice(0, 4)
-    else if (np === 'river') newCommunity = fullBoard.slice(0, 5)
+    else if (np === 'river') {
+      const riverCount = state.variant === 'blindRiver' ? 4 : 5
+      newCommunity = fullBoard.slice(0, riverCount)
+    }
     else newCommunity = state.community
 
     return {

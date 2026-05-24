@@ -172,6 +172,30 @@ describe('stateMachine', () => {
     expect(s.variant).toBe('reverseRank') // unchanged after heist started
   })
 
+  it('blindRiver shows only 4 community cards during the river phase', () => {
+    let s = initialRoomState('R')
+    s = setVariant(s, 'blindRiver')
+    for (const id of ['a','b','c']) { s = addPlayer(s, { id, name:id, avatar:'' }); s = setReady(s, id, true) }
+    s = startHeist(s, { seed: 'fixed', nowMs: 0 })
+
+    const community = [
+      {rank:7,suit:'C'},{rank:8,suit:'D'},{rank:9,suit:'H'},{rank:3,suit:'C'},{rank:4,suit:'D'},
+    ] as const
+
+    for (const [id,v] of [['a',1],['b',2],['c',3]] as const) { s = claimChip(s, id, v); s = setReadyForNextPhase(s, id, true) }
+    s = advancePhase(s, community as never, 100) // -> flop
+    expect(s.community).toHaveLength(3)
+
+    for (const [id,v] of [['a',1],['b',2],['c',3]] as const) { s = claimChip(s, id, v); s = setReadyForNextPhase(s, id, true) }
+    s = advancePhase(s, community as never, 200) // -> turn
+    expect(s.community).toHaveLength(4)
+
+    for (const [id,v] of [['a',1],['b',2],['c',3]] as const) { s = claimChip(s, id, v); s = setReadyForNextPhase(s, id, true) }
+    s = advancePhase(s, community as never, 300) // -> river: blindRiver keeps 4
+    expect(s.phase).toBe('river')
+    expect(s.community).toHaveLength(4)
+  })
+
   it('quickHeist skips the turn phase: flop -> river', () => {
     let s = initialRoomState('R')
     s = setVariant(s, 'quickHeist')
