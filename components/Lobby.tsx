@@ -85,6 +85,23 @@ export function Lobby({ send }: { send: (m: ClientMessage) => void }) {
           )}
         </section>
 
+        <section className="bg-stone-900/40 p-4 rounded border border-stone-800 space-y-2">
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <input
+              type="checkbox"
+              checked={state.abilitiesEnabled}
+              onChange={e => send({ t: 'setAbilitiesEnabled', enabled: e.target.checked })}
+              disabled={!iAmHost}
+              className="accent-violet-500"
+            />
+            <span className="font-semibold">Enable abilities</span>
+          </label>
+          <p className="text-xs text-stone-400">
+            Each player gets a random single-use ability per heist (Scout / Mole / Wildcard / Negotiator).
+            {!iAmHost && ' Only the host can toggle this.'}
+          </p>
+        </section>
+
         <div className="flex gap-2">
           <button
             className="flex-1 py-3 rounded bg-amber-600 hover:bg-amber-500 font-semibold"
