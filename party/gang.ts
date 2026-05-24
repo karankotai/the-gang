@@ -3,9 +3,9 @@ import type { Card, ChipValue, ClientMessage, RoomState, ServerMessage } from '.
 import {
   initialRoomState, addPlayer, setIdentity, setReady, setConnected,
   startHeist, claimChip, returnChip, setReadyForNextPhase, advancePhase,
-  resolveShowdown, applyRoundResult, nextRoundOrHeist,
+  resolveShowdown, applyRoundResult, nextRoundOrHeist, removePlayer,
 } from '../lib/stateMachine'
-import { canClaimChip, canReturnChip, canReadyForNextPhase, allPhaseReady } from '../lib/rules'
+import { canClaimChip, canReturnChip, canReadyForNextPhase, allPhaseReady, canProposeKick, kickVoteSatisfied } from '../lib/rules'
 import { deal } from '../lib/dealer'
 
 export default class GangServer implements Party.Server {
@@ -119,10 +119,39 @@ export default class GangServer implements Party.Server {
         this.room = nextRoundOrHeist(this.room, Date.now())
         if (this.room.phase === 'preflop') this.dealAndStart()
         break
-      case 'kickProposal':
-      case 'kickVote':
-        // Phase 2: kick-vote feature not implemented yet
-        return
+      case 'kickProposal': {
+        if (!canProposeKick(this.room, playerId, msg.playerId)) return this.err(playerId, 'BAD_KICK_PROPOSE')
+        this.room = {
+          ...this.room,
+          activeKick: {
+            targetId: msg.playerId,
+            proposerId: playerId,
+            votes: { [playerId]: true },
+            startedMs: Date.now(),
+          },
+        }
+        break
+      }
+      case 'kickVote': {
+        const k = this.room.activeKick
+        if (!k) return this.err(playerId, 'NO_KICK')
+        if (k.targetId !== msg.playerId) return this.err(playerId, 'KICK_TARGET_MISMATCH')
+        if (playerId === k.targetId) return this.err(playerId, 'CANNOT_VOTE_ON_SELF')
+        this.room = {
+          ...this.room,
+          activeKick: { ...k, votes: { ...k.votes, [playerId]: msg.agree } },
+        }
+        if (kickVoteSatisfied(this.room)) {
+          const target = k.targetId
+          const conn = this.connByPlayer.get(target)
+          if (conn) { try { conn.close() } catch {} this.connByPlayer.delete(target) }
+          const t = this.phaseTimers.get(target)
+          if (t) { clearTimeout(t); this.phaseTimers.delete(target) }
+          this.holeCards.delete(target)
+          this.room = removePlayer(this.room, target)
+        }
+        break
+      }
       case 'leave':
         break
     }
