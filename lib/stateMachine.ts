@@ -3,10 +3,21 @@ import { describeHand, evaluateBest, compareHands } from './evaluator'
 
 const PHASE_TIMEOUT_MS = 90_000
 
-function freshPhaseDeadlines(state: RoomState, nowMs: number): Record<string, number> {
+function phaseTimeoutFor(phase: Phase, variant: HeistVariant): number {
+  if (variant === 'heatRising') {
+    if (phase === 'preflop') return 90_000
+    if (phase === 'flop') return 60_000
+    if (phase === 'turn') return 40_000
+    if (phase === 'river') return 20_000
+  }
+  return PHASE_TIMEOUT_MS
+}
+
+function freshPhaseDeadlines(state: RoomState, nowMs: number, phase: Phase): Record<string, number> {
+  const ms = phaseTimeoutFor(phase, state.variant)
   const out: Record<string, number> = {}
   for (const p of state.players) {
-    if (p.connected) out[p.id] = nowMs + PHASE_TIMEOUT_MS
+    if (p.connected) out[p.id] = nowMs + ms
   }
   return out
 }
@@ -90,7 +101,7 @@ export function startHeist(state: RoomState, opts: { seed?: string; nowMs?: numb
     currentChips: chipPoolFor(n),
     lockedChips: [],
     phaseReady: [],
-    phaseDeadlineMs: freshPhaseDeadlines(playersAsConnected, nowMs),
+    phaseDeadlineMs: freshPhaseDeadlines(playersAsConnected, nowMs, 'preflop'),
     showdownAgreed: [],
     roundResult: null,
   }
@@ -178,7 +189,7 @@ export function advancePhase(state: RoomState, community?: Card[], nowMs?: numbe
       currentChips: newPool,
       lockedChips: [...state.lockedChips, locked],
       phaseReady: [],
-      phaseDeadlineMs: isClaimPhase(np) ? freshPhaseDeadlines(state, nowMs ?? Date.now()) : {},
+      phaseDeadlineMs: isClaimPhase(np) ? freshPhaseDeadlines(state, nowMs ?? Date.now(), np) : {},
     }
   }
   return { ...state, phase: np }
@@ -285,7 +296,7 @@ export function nextRoundOrHeist(state: RoomState, nowMs?: number): RoomState {
       currentChips: chipPoolFor(state.players.filter(p=>p.connected).length),
       lockedChips: [],
       phaseReady: [],
-      phaseDeadlineMs: freshPhaseDeadlines(state, t),
+      phaseDeadlineMs: freshPhaseDeadlines(state, t, 'preflop'),
       showdownAgreed: [],
       roundResult: null,
     }

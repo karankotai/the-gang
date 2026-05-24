@@ -217,6 +217,29 @@ describe('stateMachine', () => {
     expect(s.community).toHaveLength(5)
   })
 
+  it('heatRising scales phaseDeadlineMs per phase: 90/60/40/20s', () => {
+    let s = initialRoomState('R')
+    s = setVariant(s, 'heatRising')
+    for (const id of ['a','b','c']) { s = addPlayer(s, { id, name:id, avatar:'' }); s = setReady(s, id, true) }
+    s = startHeist(s, { seed: 'h', nowMs: 0 })
+    expect(s.phaseDeadlineMs.a).toBe(90_000)
+
+    const community = [
+      {rank:7,suit:'C'},{rank:8,suit:'D'},{rank:9,suit:'H'},{rank:3,suit:'C'},{rank:4,suit:'D'},
+    ] as const
+    for (const [id,v] of [['a',1],['b',2],['c',3]] as const) { s = claimChip(s, id, v); s = setReadyForNextPhase(s, id, true) }
+    s = advancePhase(s, community as never, 100)
+    expect(s.phaseDeadlineMs.a).toBe(100 + 60_000)
+
+    for (const [id,v] of [['a',1],['b',2],['c',3]] as const) { s = claimChip(s, id, v); s = setReadyForNextPhase(s, id, true) }
+    s = advancePhase(s, community as never, 200)
+    expect(s.phaseDeadlineMs.a).toBe(200 + 40_000)
+
+    for (const [id,v] of [['a',1],['b',2],['c',3]] as const) { s = claimChip(s, id, v); s = setReadyForNextPhase(s, id, true) }
+    s = advancePhase(s, community as never, 300)
+    expect(s.phaseDeadlineMs.a).toBe(300 + 20_000)
+  })
+
   it('reverseRank: claimed ranking is compared against reversed actual ranking', () => {
     let s = initialRoomState('R')
     s = setVariant(s, 'reverseRank')
