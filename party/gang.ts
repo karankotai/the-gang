@@ -1,9 +1,10 @@
 import type * as Party from 'partykit/server'
-import type { Card, ChipValue, ClientMessage, RoomState, ServerMessage } from '../lib/types'
+import type { Card, ChipValue, ClientMessage, RoomState, ServerMessage, AbilityType } from '../lib/types'
 import {
   initialRoomState, addPlayer, setIdentity, setReady, setConnected,
   startHeist, claimChip, returnChip, setReadyForNextPhase, advancePhase,
-  resolveShowdown, applyRoundResult, nextRoundOrHeist, removePlayer, setVariant, abandonGame,
+  resolveShowdown, applyRoundResult, nextRoundOrHeist, removePlayer, setVariant,
+  abandonGame, setAbilitiesEnabled, markAbilityUsed, applyNegotiatorSwap,
 } from '../lib/stateMachine'
 import { canClaimChip, canReturnChip, canReadyForNextPhase, allPhaseReady, canProposeKick, kickVoteSatisfied, enoughPlayers } from '../lib/rules'
 import { deal } from '../lib/dealer'
@@ -16,6 +17,8 @@ export default class GangServer implements Party.Server {
   phaseTimers: Map<string, ReturnType<typeof setTimeout>> = new Map()
   lastActivityMs: number = Date.now()
   idleReaperTimer: ReturnType<typeof setTimeout> | null = null
+
+  playerAbilities: Map<string, AbilityType> = new Map()
 
   constructor(readonly party: Party.Room) {
     this.room = initialRoomState(party.id)
@@ -47,6 +50,10 @@ export default class GangServer implements Party.Server {
       }
       const hc = this.holeCards.get(playerId)
       if (hc) this.sendPrivate(playerId, hc)
+      const ability = this.playerAbilities.get(playerId)
+      if (ability) {
+        try { connection.send(JSON.stringify({ t: 'ability', ability } satisfies ServerMessage)) } catch {}
+      }
     } else {
       if (this.room.phase !== 'lobby') {
         this.send(connection, { t: 'error', code: 'ROOM_BUSY', msg: 'Game already in progress' })
@@ -94,6 +101,13 @@ export default class GangServer implements Party.Server {
         const hostId = this.room.players.find(p => p.connected)?.id
         if (playerId !== hostId) return this.err(playerId, 'NOT_HOST')
         this.room = setVariant(this.room, msg.variant)
+        break
+      }
+      case 'setAbilitiesEnabled': {
+        if (this.room.phase !== 'lobby') return this.err(playerId, 'NOT_LOBBY')
+        const hostId = this.room.players.find(p => p.connected)?.id
+        if (playerId !== hostId) return this.err(playerId, 'NOT_HOST')
+        this.room = setAbilitiesEnabled(this.room, msg.enabled)
         break
       }
       case 'ready':
@@ -185,12 +199,27 @@ export default class GangServer implements Party.Server {
     this.dealAndStart()
   }
 
+  private assignAbilities() {
+    this.playerAbilities.clear()
+    if (!this.room.abilitiesEnabled) return
+    const choices: AbilityType[] = ['scout', 'mole', 'wildcard', 'negotiator']
+    for (const p of this.room.players) {
+      const pick = choices[Math.floor(Math.random() * choices.length)]
+      this.playerAbilities.set(p.id, pick)
+      const conn = this.connByPlayer.get(p.id)
+      if (conn) {
+        try { conn.send(JSON.stringify({ t: 'ability', ability: pick } satisfies ServerMessage)) } catch {}
+      }
+    }
+  }
+
   private dealAndStart() {
     const ids = this.room.players.map(p => p.id)
     const result = deal(ids)
     this.holeCards = new Map(Object.entries(result.holeCards) as [string, [Card, Card]][])
     this.community = result.community
     for (const [id, hc] of this.holeCards) this.sendPrivate(id, hc)
+    this.assignAbilities()
     this.scheduleTimers()
     this.broadcastState()
   }
