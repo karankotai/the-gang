@@ -180,6 +180,23 @@ export default class GangServer implements Party.Server {
         }
         break
       }
+      case 'abilityScout': {
+        if (!this.room.abilitiesEnabled) return this.err(playerId, 'ABILITIES_OFF')
+        if (this.playerAbilities.get(playerId) !== 'scout') return this.err(playerId, 'WRONG_ABILITY')
+        if (this.room.abilityUsed[playerId]) return this.err(playerId, 'ABILITY_USED')
+        if (!(this.room.phase === 'preflop' || this.room.phase === 'flop' || this.room.phase === 'turn')) {
+          return this.err(playerId, 'BAD_PHASE')
+        }
+        const idx = this.nextUnrevealedCommunityIndex()
+        if (idx == null) return this.err(playerId, 'NO_CARD_LEFT')
+        const card = this.community[idx]
+        const conn = this.connByPlayer.get(playerId)
+        if (conn) {
+          try { conn.send(JSON.stringify({ t: 'peek', card } satisfies ServerMessage)) } catch {}
+        }
+        this.room = markAbilityUsed(this.room, playerId)
+        break
+      }
       case 'endGame':
         if (this.room.phase === 'lobby') return
         this.clearPhaseTimers()
@@ -232,6 +249,12 @@ export default class GangServer implements Party.Server {
 
   private allShowdownAgreed(): boolean {
     return this.room.players.filter(p => p.connected).every(p => this.room.showdownAgreed.includes(p.id))
+  }
+
+  private nextUnrevealedCommunityIndex(): number | null {
+    const revealed = this.room.community.length
+    if (revealed >= 5) return null
+    return revealed
   }
 
   private runShowdown() {
