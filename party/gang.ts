@@ -92,8 +92,12 @@ export default class GangServer implements Party.Server {
       case 'readyForNextPhase':
         if (msg.ready && !canReadyForNextPhase(this.room, playerId)) return this.err(playerId, 'BAD_READY')
         this.room = setReadyForNextPhase(this.room, playerId, msg.ready)
-        if (allPhaseReady(this.room)) this.advance()
-        return
+        if (allPhaseReady(this.room)) {
+          this.advance()
+          return
+        }
+        // Fall through to broadcast so other clients see the updated phaseReady count.
+        break
       case 'agreeShowdown':
         if (this.room.phase !== 'showdown') return this.err(playerId, 'NOT_SHOWDOWN')
         if (!this.room.showdownAgreed.includes(playerId)) {

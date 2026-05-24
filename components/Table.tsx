@@ -14,7 +14,11 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
   const myId = useGameStore(s => s.myPlayerId)!
   const hole = useGameStore(s => s.holeCards)
   const errors = useGameStore(s => s.errors)
-  const opponents = state.players.filter(p => p.id !== myId)
+  // Reorder so the current player is last (rightmost on desktop, rightmost in scroll on mobile).
+  const seatedPlayers = [
+    ...state.players.filter(p => p.id !== myId),
+    ...state.players.filter(p => p.id === myId),
+  ]
 
   const n = state.players.length
   const myChip = Object.entries(state.currentChips).find(([, v]) => v === myId)?.[0]
@@ -33,31 +37,51 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
 
           <section className="md:grid md:grid-cols-3 md:gap-3 lg:grid-cols-5">
             <div className="flex md:contents gap-2 overflow-x-auto pb-2 md:pb-0 md:overflow-visible">
-            {opponents.map(p => {
-              const opChip = Object.entries(state.currentChips).find(([, v]) => v === p.id)?.[0]
+            {seatedPlayers.map(p => {
+              const isMe = p.id === myId
+              const pChip = Object.entries(state.currentChips).find(([, v]) => v === p.id)?.[0]
+              const isReady = state.phaseReady.includes(p.id)
               return (
-                <div key={p.id} className="flex-shrink-0 min-w-[140px] md:min-w-0 p-3 rounded bg-stone-900/60 border border-stone-800">
-                  <div className="font-semibold">{p.name}</div>
+                <div
+                  key={p.id}
+                  className={
+                    'flex-shrink-0 min-w-[140px] md:min-w-0 p-3 rounded border ' +
+                    (isMe
+                      ? 'bg-amber-950/50 border-amber-600/60 ring-1 ring-amber-500/40'
+                      : 'bg-stone-900/60 border-stone-800')
+                  }
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="font-semibold truncate">
+                      {p.name}
+                      {isMe && <span className="text-amber-300 text-xs ml-1">(you)</span>}
+                    </div>
+                    {isReady && <span className="text-emerald-400 text-xs">✓</span>}
+                  </div>
                   <div className="text-xs text-stone-400">{p.connected ? 'online' : 'offline'}</div>
-                  <div className="mt-2 flex gap-1 text-xs">
+                  <div className="mt-2 flex gap-1 text-xs items-center">
                     {state.lockedChips.map((l, i) => {
                       const v = Object.entries(l.claims).find(([, id]) => id === p.id)?.[0]
                       if (!v) return null
                       return <ChipIcon key={i} value={Number(v)} color={PHASE_COLOR[l.phase]} size={24} />
                     })}
-                    {opChip && (
+                    {pChip && (
                       <motion.div
-                        layoutId={`chip-${state.phase}-${Number(opChip)}`}
+                        layoutId={`chip-${state.phase}-${Number(pChip)}`}
                         layout
                         transition={{ type: 'spring', stiffness: 260, damping: 28 }}
                       >
                         <ChipIcon
-                          value={Number(opChip)}
-                          color="other"
+                          value={Number(pChip)}
+                          color={isMe ? 'mine' : 'other'}
                           size={32}
-                          title={`Click to steal chip ${opChip} from ${p.name}`}
-                          ariaLabel={`Steal chip ${opChip} from ${p.name}`}
-                          onClick={() => send({ t: 'claimChip', value: Number(opChip) as ChipValue })}
+                          title={isMe ? 'Click to return' : `Click to steal chip ${pChip} from ${p.name}`}
+                          ariaLabel={isMe ? `Return chip ${pChip}` : `Steal chip ${pChip} from ${p.name}`}
+                          onClick={() =>
+                            send(isMe
+                              ? { t: 'returnChip' }
+                              : { t: 'claimChip', value: Number(pChip) as ChipValue })
+                          }
                         />
                       </motion.div>
                     )}
@@ -93,14 +117,12 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
               <div className="flex justify-center gap-2">
                 {Array.from({ length: n }, (_, i) => (i + 1) as ChipValue).map(v => {
                   const holder = state.currentChips[v]
-                  const mine = holder === myId
-                  const heldByOther = holder != null && !mine
-                  // Opponent-held chips are rendered next to that opponent's panel — not in the pool.
-                  // Rendering them here too would duplicate the layoutId and break the animation.
-                  if (heldByOther) return null
+                  // Any claimed chip — mine or an opponent's — lives in that player's panel.
+                  // The pool only shows unclaimed chips, so each chip has exactly one DOM home
+                  // and the layoutId animates cleanly between locations.
+                  if (holder != null) return null
                   const isClaim = state.phase === 'preflop' || state.phase === 'flop' || state.phase === 'turn' || state.phase === 'river'
                   const currentPhaseColor = isClaim ? PHASE_COLOR[state.phase as Extract<typeof state.phase, 'preflop'|'flop'|'turn'|'river'>] : 'white'
-                  const color = mine ? 'mine' : currentPhaseColor
                   return (
                     <motion.div
                       key={v}
@@ -110,11 +132,11 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
                     >
                       <ChipIcon
                         value={v}
-                        color={color}
+                        color={currentPhaseColor}
                         size={56}
-                        title={mine ? 'Click to return' : 'Click to claim'}
+                        title="Click to claim"
                         ariaLabel={`Chip ${v}`}
-                        onClick={() => send(mine ? { t: 'returnChip' } : { t: 'claimChip', value: v })}
+                        onClick={() => send({ t: 'claimChip', value: v })}
                       />
                     </motion.div>
                   )
