@@ -218,6 +218,37 @@ export default class GangServer implements Party.Server {
         this.room = markAbilityUsed(this.room, playerId)
         break
       }
+      case 'abilityWildcard': {
+        if (!this.room.abilitiesEnabled) return this.err(playerId, 'ABILITIES_OFF')
+        if (this.playerAbilities.get(playerId) !== 'wildcard') return this.err(playerId, 'WRONG_ABILITY')
+        if (this.room.abilityUsed[playerId]) return this.err(playerId, 'ABILITY_USED')
+        if (this.room.phase !== 'preflop') return this.err(playerId, 'BAD_PHASE')
+        const inUse = new Set<string>()
+        for (const [, [c1, c2]] of this.holeCards) {
+          inUse.add(`${c1.rank}${c1.suit}`); inUse.add(`${c2.rank}${c2.suit}`)
+        }
+        for (const c of this.community) inUse.add(`${c.rank}${c.suit}`)
+        const caller = this.holeCards.get(playerId)
+        if (caller) {
+          inUse.delete(`${caller[0].rank}${caller[0].suit}`)
+          inUse.delete(`${caller[1].rank}${caller[1].suit}`)
+        }
+        const SUITS: Array<'S'|'H'|'D'|'C'> = ['S','H','D','C']
+        const RANKS = [2,3,4,5,6,7,8,9,10,11,12,13,14] as const
+        const remaining: Card[] = []
+        for (const s of SUITS) for (const r of RANKS) {
+          if (!inUse.has(`${r}${s}`)) remaining.push({ rank: r as Card['rank'], suit: s })
+        }
+        for (let i = remaining.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1))
+          ;[remaining[i], remaining[j]] = [remaining[j], remaining[i]]
+        }
+        const newHand: [Card, Card] = [remaining[0], remaining[1]]
+        this.holeCards.set(playerId, newHand)
+        this.sendPrivate(playerId, newHand)
+        this.room = markAbilityUsed(this.room, playerId)
+        break
+      }
       case 'endGame':
         if (this.room.phase === 'lobby') return
         this.clearPhaseTimers()
