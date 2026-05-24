@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Soft drop shadow -->
+  <circle cx="32" cy="35" r="29" fill="rgba(0,0,0,0.35)"/>
+
+  <!-- Outer chip body (amber wood) -->
+  <circle cx="32" cy="32" r="30" fill="#d4a05a" stroke="#2a1808" stroke-width="2"/>
+
+  <!-- 8 alternating dark rim wedges -->
+  <g fill="#2a1808" opacity="0.85">
+    <path d="M 62 32 A 30 30 0 0 1 53.21 53.21 L 47.55 47.55 A 22 22 0 0 0 54 32 Z"/>
+    <path d="M 32 62 A 30 30 0 0 1 10.79 53.21 L 16.45 47.55 A 22 22 0 0 0 32 54 Z"/>
+    <path d="M 2 32 A 30 30 0 0 1 10.79 10.79 L 16.45 16.45 A 22 22 0 0 0 10 32 Z"/>
+    <path d="M 32 2 A 30 30 0 0 1 53.21 10.79 L 47.55 16.45 A 22 22 0 0 0 32 10 Z"/>
+  </g>
+
+  <!-- Inner ring (lighter) -->
+  <circle cx="32" cy="32" r="22" fill="#e8c084" stroke="#2a1808" stroke-width="1.5"/>
+
+  <!-- Center: stylized G in serif -->
+  <text x="32" y="33" font-family="Georgia, 'Times New Roman', serif" font-size="28" font-weight="700"
+        text-anchor="middle" dominant-baseline="central" fill="#2a1808">G</text>
+</svg>
