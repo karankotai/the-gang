@@ -1,6 +1,16 @@
 import type { Card, ChipValue, LockedPhase, Phase, Player, RoomState, RoundResult } from './types'
 import { describeHand, evaluateBest, compareHands } from './evaluator'
 
+const PHASE_TIMEOUT_MS = 90_000
+
+function freshPhaseDeadlines(state: RoomState, nowMs: number): Record<string, number> {
+  const out: Record<string, number> = {}
+  for (const p of state.players) {
+    if (p.connected) out[p.id] = nowMs + PHASE_TIMEOUT_MS
+  }
+  return out
+}
+
 export function initialRoomState(roomCode: string): RoomState {
   return {
     roomCode,
@@ -37,11 +47,14 @@ export function setReady(state: RoomState, playerId: string, ready: boolean): Ro
   return { ...state, players: state.players.map(p => p.id === playerId ? { ...p, ready } : p) }
 }
 
-export function startHeist(state: RoomState, opts: { seed?: string } = {}): RoomState {
+export function startHeist(state: RoomState, opts: { seed?: string; nowMs?: number } = {}): RoomState {
   if (state.phase !== 'lobby') return state
   if (state.players.length < 3) return state
   if (!state.players.every(p => p.ready)) return state
   const n = state.players.length
+  const nowMs = opts.nowMs ?? Date.now()
+  // Treat all listed players as connected at heist start (lobby UI requires all ready, so they were online).
+  const playersAsConnected = { ...state, players: state.players.map(p => ({ ...p, connected: true })) }
   return {
     ...state,
     phase: 'preflop',
@@ -49,7 +62,7 @@ export function startHeist(state: RoomState, opts: { seed?: string } = {}): Room
     currentChips: chipPoolFor(n),
     lockedChips: [],
     phaseReady: [],
-    phaseDeadlineMs: {},
+    phaseDeadlineMs: freshPhaseDeadlines(playersAsConnected, nowMs),
     showdownAgreed: [],
     roundResult: null,
   }
@@ -97,7 +110,7 @@ export function setReadyForNextPhase(state: RoomState, playerId: string, ready: 
   return { ...state, phaseReady: [...next] }
 }
 
-export function advancePhase(state: RoomState, community?: Card[]): RoomState {
+export function advancePhase(state: RoomState, community?: Card[], nowMs?: number): RoomState {
   const next: Record<Phase, Phase | null> = {
     lobby: 'preflop', preflop: 'flop', flop: 'turn', turn: 'river',
     river: 'showdown', showdown: 'roundResult', roundResult: 'preflop',
@@ -133,7 +146,7 @@ export function advancePhase(state: RoomState, community?: Card[]): RoomState {
       currentChips: newPool,
       lockedChips: [...state.lockedChips, locked],
       phaseReady: [],
-      phaseDeadlineMs: {},
+      phaseDeadlineMs: isClaimPhase(np) ? freshPhaseDeadlines(state, nowMs ?? Date.now()) : {},
     }
   }
   return { ...state, phase: np }
@@ -224,8 +237,9 @@ export function applyRoundResult(state: RoomState, result: RoundResult): RoomSta
   return { ...state, phase, roundResult: result, heist }
 }
 
-export function nextRoundOrHeist(state: RoomState): RoomState {
+export function nextRoundOrHeist(state: RoomState, nowMs?: number): RoomState {
   const h = state.heist
+  const t = nowMs ?? Date.now()
   if (state.phase === 'heistResult') {
     if (h.number >= 4) return { ...state, phase: 'gameEnd' }
     return {
@@ -236,7 +250,7 @@ export function nextRoundOrHeist(state: RoomState): RoomState {
       currentChips: chipPoolFor(state.players.filter(p=>p.connected).length),
       lockedChips: [],
       phaseReady: [],
-      phaseDeadlineMs: {},
+      phaseDeadlineMs: freshPhaseDeadlines(state, t),
       showdownAgreed: [],
       roundResult: null,
     }
@@ -248,7 +262,7 @@ export function nextRoundOrHeist(state: RoomState): RoomState {
     currentChips: chipPoolFor(state.players.filter(p=>p.connected).length),
     lockedChips: [],
     phaseReady: [],
-    phaseDeadlineMs: {},
+    phaseDeadlineMs: freshPhaseDeadlines(state, t),
     showdownAgreed: [],
     roundResult: null,
   }

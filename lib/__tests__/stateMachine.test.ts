@@ -111,4 +111,32 @@ describe('stateMachine', () => {
     ])
     expect(result.actualRanking).toEqual(['c','b','a'])
   })
+
+  it('startHeist seeds phaseDeadlineMs for every connected player', () => {
+    let s = initialRoomState('R')
+    for (const id of ['a','b','c']) { s = addPlayer(s, { id, name:id, avatar:'' }); s = setReady(s, id, true) }
+    const nowMs = 1_700_000_000_000
+    s = startHeist(s, { seed: 'fixed', nowMs })
+    expect(Object.keys(s.phaseDeadlineMs).sort()).toEqual(['a','b','c'])
+    expect(s.phaseDeadlineMs.a).toBe(nowMs + 90_000)
+    expect(s.phaseDeadlineMs.b).toBe(nowMs + 90_000)
+    expect(s.phaseDeadlineMs.c).toBe(nowMs + 90_000)
+  })
+
+  it('advancePhase resets phaseDeadlineMs for every connected player', () => {
+    let s = initialRoomState('R')
+    for (const id of ['a','b','c']) { s = addPlayer(s, { id, name:id, avatar:'' }); s = setReady(s, id, true) }
+    s = startHeist(s, { seed: 'fixed', nowMs: 1_700_000_000_000 })
+    s = claimChip(s, 'a', 1); s = claimChip(s, 'b', 2); s = claimChip(s, 'c', 3)
+    s = setReadyForNextPhase(s, 'a', true); s = setReadyForNextPhase(s, 'b', true); s = setReadyForNextPhase(s, 'c', true)
+    const community = [
+      {rank:7,suit:'C'},{rank:8,suit:'D'},{rank:9,suit:'H'},{rank:3,suit:'C'},{rank:4,suit:'D'},
+    ] as const
+    const laterMs = 1_700_000_120_000
+    s = advancePhase(s, community as never, laterMs)
+    expect(s.phase).toBe('flop')
+    expect(s.phaseDeadlineMs.a).toBe(laterMs + 90_000)
+    expect(s.phaseDeadlineMs.b).toBe(laterMs + 90_000)
+    expect(s.phaseDeadlineMs.c).toBe(laterMs + 90_000)
+  })
 })
