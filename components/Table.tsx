@@ -127,6 +127,7 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
                     })}
                     {pChip && (
                       <motion.div
+                        key={pChip}
                         layoutId={`chip-${state.phase}-${Number(pChip)}`}
                         layout
                         transition={{ type: 'spring', stiffness: 260, damping: 28 }}
