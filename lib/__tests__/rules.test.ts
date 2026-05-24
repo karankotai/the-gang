@@ -21,6 +21,8 @@ function baseState(over: Partial<RoomState> = {}): RoomState {
     variant: 'standard',
     roundResult: null,
     activeKick: null,
+    abilitiesEnabled: false,
+    abilityUsed: {},
     ...over,
   }
 }

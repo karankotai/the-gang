@@ -35,6 +35,15 @@ export const VARIANT_INFO: Record<HeistVariant, { label: string; description: st
   heatRising:  { label: 'Heat Rising',    description: 'Phase timer halves each phase: 90s -> 60s -> 40s -> 20s.' },
 }
 
+export type AbilityType = 'scout' | 'mole' | 'wildcard' | 'negotiator'
+
+export const ABILITY_INFO: Record<AbilityType, { label: string; description: string }> = {
+  scout:      { label: 'Scout',      description: "Privately see the next single community card before it's revealed." },
+  mole:       { label: 'Mole',       description: "Pick an opponent — see their hole cards once." },
+  wildcard:   { label: 'Wildcard',   description: 'Re-deal your own 2 hole cards. Preflop only.' },
+  negotiator: { label: 'Negotiator', description: "Pick two players who hold chips — swap their current-phase chips." },
+}
+
 export const PHASE_COLOR: Record<Extract<Phase, 'preflop'|'flop'|'turn'|'river'>, ChipColor> = {
   preflop: 'white',
   flop: 'yellow',
@@ -91,6 +100,8 @@ export type RoomState = {
   variant: HeistVariant
   roundResult: RoundResult | null
   activeKick: KickProposal | null
+  abilitiesEnabled: boolean
+  abilityUsed: Record<string, boolean>
 }
 
 // Wire messages
@@ -108,6 +119,11 @@ export type ClientMessage =
   | { t: 'kickVote'; playerId: string; agree: boolean }
   | { t: 'setVariant'; variant: HeistVariant }
   | { t: 'endGame' }
+  | { t: 'setAbilitiesEnabled'; enabled: boolean }
+  | { t: 'abilityScout' }
+  | { t: 'abilityMole'; targetId: string }
+  | { t: 'abilityWildcard' }
+  | { t: 'abilityNegotiator'; aId: string; bId: string }
   | { t: 'leave' }
 
 export type ServerMessage =
@@ -115,3 +131,6 @@ export type ServerMessage =
   | { t: 'private'; holeCards: [Card, Card] }
   | { t: 'error'; code: string; msg: string }
   | { t: 'event'; text: string }
+  | { t: 'ability'; ability: AbilityType }
+  | { t: 'peek'; card: Card }
+  | { t: 'molePeek'; targetId: string; holeCards: [Card, Card] }

@@ -37,6 +37,8 @@ export function initialRoomState(roomCode: string): RoomState {
     variant: 'standard',
     roundResult: null,
     activeKick: null,
+    abilitiesEnabled: false,
+    abilityUsed: {},
   }
 }
 
