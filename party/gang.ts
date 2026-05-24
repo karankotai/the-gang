@@ -197,6 +197,27 @@ export default class GangServer implements Party.Server {
         this.room = markAbilityUsed(this.room, playerId)
         break
       }
+      case 'abilityMole': {
+        if (!this.room.abilitiesEnabled) return this.err(playerId, 'ABILITIES_OFF')
+        if (this.playerAbilities.get(playerId) !== 'mole') return this.err(playerId, 'WRONG_ABILITY')
+        if (this.room.abilityUsed[playerId]) return this.err(playerId, 'ABILITY_USED')
+        if (this.room.phase === 'lobby' || this.room.phase === 'roundResult' || this.room.phase === 'heistResult' || this.room.phase === 'gameEnd') {
+          return this.err(playerId, 'BAD_PHASE')
+        }
+        if (msg.targetId === playerId) return this.err(playerId, 'CANT_TARGET_SELF')
+        const targetHole = this.holeCards.get(msg.targetId)
+        if (!targetHole) return this.err(playerId, 'TARGET_NO_CARDS')
+        const conn = this.connByPlayer.get(playerId)
+        if (conn) {
+          try {
+            conn.send(JSON.stringify({
+              t: 'molePeek', targetId: msg.targetId, holeCards: targetHole,
+            } satisfies ServerMessage))
+          } catch {}
+        }
+        this.room = markAbilityUsed(this.room, playerId)
+        break
+      }
       case 'endGame':
         if (this.room.phase === 'lobby') return
         this.clearPhaseTimers()
