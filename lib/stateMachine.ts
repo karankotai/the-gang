@@ -144,7 +144,8 @@ export function advancePhase(state: RoomState, community?: Card[], nowMs?: numbe
     river: 'showdown', showdown: 'roundResult', roundResult: 'preflop',
     heistResult: 'preflop', gameEnd: null,
   }
-  const np = next[state.phase]
+  let np = next[state.phase]
+  if (state.variant === 'quickHeist' && state.phase === 'flop') np = 'river'
   if (!np) return state
   if (isClaimPhase(state.phase)) {
     const locked: LockedPhase = {
