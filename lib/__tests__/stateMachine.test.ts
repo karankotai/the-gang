@@ -12,6 +12,9 @@ import {
   removePlayer,
   setVariant,
   abandonGame,
+  setAbilitiesEnabled,
+  markAbilityUsed,
+  nextRoundOrHeist,
 } from '../stateMachine'
 import { deal } from '../dealer'
 
@@ -255,6 +258,38 @@ describe('stateMachine', () => {
     expect(s.lockedChips).toEqual([])
     expect(s.phaseReady).toEqual([])
     expect(s.heist).toEqual({ number: 1, roundsWon: 0, roundsLost: 0, totalHeistsWon: 0 })
+  })
+
+  it('setAbilitiesEnabled flips the lobby flag', () => {
+    let s = initialRoomState('R')
+    s = setAbilitiesEnabled(s, true)
+    expect(s.abilitiesEnabled).toBe(true)
+    for (const id of ['a','b','c']) { s = addPlayer(s, { id, name:id, avatar:'' }); s = setReady(s, id, true) }
+    s = startHeist(s, { seed: 's', nowMs: 0 })
+    s = setAbilitiesEnabled(s, false)
+    expect(s.abilitiesEnabled).toBe(true) // unchanged after heist started
+  })
+
+  it('markAbilityUsed sets the flag', () => {
+    let s = initialRoomState('R')
+    for (const id of ['a','b','c']) { s = addPlayer(s, { id, name:id, avatar:'' }); s = setReady(s, id, true) }
+    s = startHeist(s, { seed: 's', nowMs: 0 })
+    s = markAbilityUsed(s, 'a')
+    expect(s.abilityUsed.a).toBe(true)
+    expect(s.abilityUsed.b).toBeUndefined()
+  })
+
+  it('starting a new heist resets abilityUsed', () => {
+    let s = initialRoomState('R')
+    s = setAbilitiesEnabled(s, true)
+    for (const id of ['a','b','c']) { s = addPlayer(s, { id, name:id, avatar:'' }); s = setReady(s, id, true) }
+    s = startHeist(s, { seed: 's', nowMs: 0 })
+    s = markAbilityUsed(s, 'a')
+    s = markAbilityUsed(s, 'b')
+    s = { ...s, phase: 'heistResult', heist: { ...s.heist, roundsWon: 3, roundsLost: 0 } }
+    s = nextRoundOrHeist(s, 100)
+    expect(s.phase).toBe('preflop')
+    expect(s.abilityUsed).toEqual({})
   })
 
   it('reverseRank: claimed ranking is compared against reversed actual ranking', () => {

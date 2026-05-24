@@ -106,6 +106,15 @@ export function setVariant(state: RoomState, variant: HeistVariant): RoomState {
   return { ...state, variant }
 }
 
+export function setAbilitiesEnabled(state: RoomState, enabled: boolean): RoomState {
+  if (state.phase !== 'lobby') return state
+  return { ...state, abilitiesEnabled: enabled }
+}
+
+export function markAbilityUsed(state: RoomState, playerId: string): RoomState {
+  return { ...state, abilityUsed: { ...state.abilityUsed, [playerId]: true } }
+}
+
 export function startHeist(state: RoomState, opts: { seed?: string; nowMs?: number } = {}): RoomState {
   if (state.phase !== 'lobby') return state
   if (state.players.length < 3) return state
@@ -124,6 +133,7 @@ export function startHeist(state: RoomState, opts: { seed?: string; nowMs?: numb
     phaseDeadlineMs: freshPhaseDeadlines(playersAsConnected, nowMs, 'preflop'),
     showdownAgreed: [],
     roundResult: null,
+    abilityUsed: {},
   }
 }
 
@@ -319,6 +329,7 @@ export function nextRoundOrHeist(state: RoomState, nowMs?: number): RoomState {
       phaseDeadlineMs: freshPhaseDeadlines(state, t, 'preflop'),
       showdownAgreed: [],
       roundResult: null,
+      abilityUsed: {},
     }
   }
   return {
@@ -331,6 +342,7 @@ export function nextRoundOrHeist(state: RoomState, nowMs?: number): RoomState {
     phaseDeadlineMs: freshPhaseDeadlines(state, t, 'preflop'),
     showdownAgreed: [],
     roundResult: null,
+    abilityUsed: {},
   }
 }
 
