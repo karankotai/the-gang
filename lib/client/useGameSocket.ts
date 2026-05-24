@@ -22,6 +22,9 @@ export function useGameSocket(roomCode: string) {
   const setMyPlayerId = useGameStore(s => s.setMyPlayerId)
   const addEvent = useGameStore(s => s.addEvent)
   const addError = useGameStore(s => s.addError)
+  const setMyAbility = useGameStore(s => s.setMyAbility)
+  const setScoutPeek = useGameStore(s => s.setScoutPeek)
+  const setMolePeek = useGameStore(s => s.setMolePeek)
 
   useEffect(() => {
     const playerId = getOrCreatePlayerId()
@@ -39,12 +42,15 @@ export function useGameSocket(roomCode: string) {
           case 'private': setHoleCards(msg.holeCards); break
           case 'event': addEvent(msg.text); break
           case 'error': addError(msg.code + ': ' + msg.msg); break
+          case 'ability': setMyAbility(msg.ability); break
+          case 'peek': setScoutPeek(msg.card); break
+          case 'molePeek': setMolePeek({ targetId: msg.targetId, holeCards: msg.holeCards }); break
         }
       } catch {}
     })
     ref.current = sock
     return () => { sock.close() }
-  }, [roomCode, setState, setHoleCards, setMyPlayerId, addEvent, addError])
+  }, [roomCode, setState, setHoleCards, setMyPlayerId, addEvent, addError, setMyAbility, setScoutPeek, setMolePeek])
 
   function send(msg: ClientMessage) {
     ref.current?.send(JSON.stringify(msg))
