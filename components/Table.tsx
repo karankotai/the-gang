@@ -22,6 +22,8 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
   ]
 
   const n = state.players.length
+  const connectedCount = state.players.filter(p => p.connected).length
+  const isPaused = connectedCount < 3 && state.phase !== 'lobby' && state.phase !== 'gameEnd'
   const myChip = Object.entries(state.currentChips).find(([, v]) => v === myId)?.[0]
   const iAmReady = state.phaseReady.includes(myId)
   const host = state.players.find(p => p.connected)
@@ -47,6 +49,23 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
             </div>
             <span className="text-stone-400">Room {state.roomCode}</span>
           </header>
+
+          {isPaused && (
+            <div className="rounded border border-rose-700 bg-rose-950/60 px-4 py-3 flex items-center justify-between gap-3">
+              <div>
+                <div className="font-semibold text-rose-200">Paused — not enough players</div>
+                <div className="text-xs text-rose-300/80">
+                  {connectedCount}/3 connected. Waiting for someone to reconnect, or abandon to return to lobby.
+                </div>
+              </div>
+              <button
+                className="px-3 py-1.5 rounded bg-rose-700 hover:bg-rose-600 text-stone-50 text-sm font-semibold"
+                onClick={() => send({ t: 'endGame' })}
+              >
+                Abandon game
+              </button>
+            </div>
+          )}
 
           <section className="md:grid md:grid-cols-3 md:gap-3 lg:grid-cols-5">
             <div className="flex md:contents gap-2 overflow-x-auto pb-2 md:pb-0 md:overflow-visible">

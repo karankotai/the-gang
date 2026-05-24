@@ -3,9 +3,9 @@ import type { Card, ChipValue, ClientMessage, RoomState, ServerMessage } from '.
 import {
   initialRoomState, addPlayer, setIdentity, setReady, setConnected,
   startHeist, claimChip, returnChip, setReadyForNextPhase, advancePhase,
-  resolveShowdown, applyRoundResult, nextRoundOrHeist, removePlayer, setVariant,
+  resolveShowdown, applyRoundResult, nextRoundOrHeist, removePlayer, setVariant, abandonGame,
 } from '../lib/stateMachine'
-import { canClaimChip, canReturnChip, canReadyForNextPhase, allPhaseReady, canProposeKick, kickVoteSatisfied } from '../lib/rules'
+import { canClaimChip, canReturnChip, canReadyForNextPhase, allPhaseReady, canProposeKick, kickVoteSatisfied, enoughPlayers } from '../lib/rules'
 import { deal } from '../lib/dealer'
 
 export default class GangServer implements Party.Server {
@@ -113,7 +113,7 @@ export default class GangServer implements Party.Server {
       case 'readyForNextPhase':
         if (msg.ready && !canReadyForNextPhase(this.room, playerId)) return this.err(playerId, 'BAD_READY')
         this.room = setReadyForNextPhase(this.room, playerId, msg.ready)
-        if (allPhaseReady(this.room)) {
+        if (allPhaseReady(this.room) && enoughPlayers(this.room)) {
           this.advance()
           return
         }
@@ -121,6 +121,7 @@ export default class GangServer implements Party.Server {
         break
       case 'agreeShowdown': {
         if (this.room.phase !== 'showdown') return this.err(playerId, 'NOT_SHOWDOWN')
+        if (!enoughPlayers(this.room)) return this.err(playerId, 'NOT_ENOUGH_PLAYERS')
         const hostId = this.room.players.find(p => p.connected)?.id
         if (playerId !== hostId) return this.err(playerId, 'NOT_HOST')
         this.runShowdown()
@@ -128,6 +129,7 @@ export default class GangServer implements Party.Server {
       }
       case 'nextRound':
         if (this.room.phase !== 'roundResult' && this.room.phase !== 'heistResult') return
+        if (!enoughPlayers(this.room)) return this.err(playerId, 'NOT_ENOUGH_PLAYERS')
         this.room = nextRoundOrHeist(this.room, Date.now())
         if (this.room.phase === 'preflop') this.dealAndStart()
         break
@@ -164,6 +166,13 @@ export default class GangServer implements Party.Server {
         }
         break
       }
+      case 'endGame':
+        if (this.room.phase === 'lobby') return
+        this.clearPhaseTimers()
+        this.holeCards.clear()
+        this.community = []
+        this.room = abandonGame(this.room)
+        break
       case 'leave':
         break
     }
@@ -265,7 +274,7 @@ export default class GangServer implements Party.Server {
     if (!this.room.phaseReady.includes(playerId)) {
       this.room = setReadyForNextPhase(this.room, playerId, true)
     }
-    if (allPhaseReady(this.room)) {
+    if (allPhaseReady(this.room) && enoughPlayers(this.room)) {
       this.advance()
       return
     }

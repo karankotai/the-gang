@@ -11,6 +11,7 @@ import {
   resolveShowdown,
   removePlayer,
   setVariant,
+  abandonGame,
 } from '../stateMachine'
 import { deal } from '../dealer'
 
@@ -238,6 +239,22 @@ describe('stateMachine', () => {
     for (const [id,v] of [['a',1],['b',2],['c',3]] as const) { s = claimChip(s, id, v); s = setReadyForNextPhase(s, id, true) }
     s = advancePhase(s, community as never, 300)
     expect(s.phaseDeadlineMs.a).toBe(300 + 20_000)
+  })
+
+  it('abandonGame resets to fresh lobby, preserves players, resets ready flags', () => {
+    let s = initialRoomState('R')
+    for (const id of ['a','b','c']) { s = addPlayer(s, { id, name:id, avatar:'' }); s = setReady(s, id, true) }
+    s = startHeist(s, { seed: 's', nowMs: 0 })
+    s = claimChip(s, 'a', 1)
+    s = abandonGame(s)
+    expect(s.phase).toBe('lobby')
+    expect(s.players.map(p => p.id)).toEqual(['a','b','c'])
+    expect(s.players.every(p => p.ready === false)).toBe(true)
+    expect(s.community).toEqual([])
+    expect(s.currentChips).toEqual({})
+    expect(s.lockedChips).toEqual([])
+    expect(s.phaseReady).toEqual([])
+    expect(s.heist).toEqual({ number: 1, roundsWon: 0, roundsLost: 0, totalHeistsWon: 0 })
   })
 
   it('reverseRank: claimed ranking is compared against reversed actual ranking', () => {

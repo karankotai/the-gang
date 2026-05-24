@@ -48,6 +48,10 @@ export function canProposeKick(state: RoomState, proposerId: string, targetId: s
   return true
 }
 
+export function enoughPlayers(state: RoomState): boolean {
+  return state.players.filter(p => p.connected).length >= 3
+}
+
 export function kickVoteSatisfied(state: RoomState): boolean {
   const k = state.activeKick
   if (!k) return false

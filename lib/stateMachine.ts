@@ -81,6 +81,24 @@ export function setReady(state: RoomState, playerId: string, ready: boolean): Ro
   return { ...state, players: state.players.map(p => p.id === playerId ? { ...p, ready } : p) }
 }
 
+export function abandonGame(state: RoomState): RoomState {
+  return {
+    ...state,
+    phase: 'lobby',
+    players: state.players.map(p => ({ ...p, ready: false })),
+    community: [],
+    currentChips: {},
+    lockedChips: [],
+    phaseReady: [],
+    phaseDeadlineMs: {},
+    showdownAgreed: [],
+    heist: { number: 1, roundsWon: 0, roundsLost: 0, totalHeistsWon: 0 },
+    roundResult: null,
+    activeKick: null,
+    // keep variant — host chose it, don't lose it on abandon
+  }
+}
+
 export function setVariant(state: RoomState, variant: HeistVariant): RoomState {
   if (state.phase !== 'lobby') return state
   return { ...state, variant }

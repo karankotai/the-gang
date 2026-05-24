@@ -107,6 +107,7 @@ export type ClientMessage =
   | { t: 'kickProposal'; playerId: string }
   | { t: 'kickVote'; playerId: string; agree: boolean }
   | { t: 'setVariant'; variant: HeistVariant }
+  | { t: 'endGame' }
   | { t: 'leave' }
 
 export type ServerMessage =

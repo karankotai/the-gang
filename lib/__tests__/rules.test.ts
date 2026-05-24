@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { canClaimChip, canReturnChip, canReadyForNextPhase, allPhaseReady, canProposeKick, kickVoteSatisfied } from '../rules'
+import { canClaimChip, canReturnChip, canReadyForNextPhase, allPhaseReady, canProposeKick, kickVoteSatisfied, enoughPlayers } from '../rules'
 import type { RoomState } from '../types'
 
 function baseState(over: Partial<RoomState> = {}): RoomState {
@@ -146,6 +146,22 @@ describe('lockedEarly variant', () => {
       currentChips: { 1: 'a', 2: null, 3: null },
     })
     expect(canReturnChip(s, 'a')).toBe(false)
+  })
+})
+
+describe('enoughPlayers', () => {
+  it('true with 3+ connected players', () => {
+    expect(enoughPlayers(baseState())).toBe(true)
+  })
+  it('false with 2 connected players', () => {
+    const s = baseState({
+      players: [
+        { id: 'a', name:'A', avatar:'', seat:0, connected:true, ready:true },
+        { id: 'b', name:'B', avatar:'', seat:1, connected:true, ready:true },
+        { id: 'c', name:'C', avatar:'', seat:2, connected:false, ready:true },
+      ],
+    })
+    expect(enoughPlayers(s)).toBe(false)
   })
 })
 
