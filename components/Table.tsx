@@ -1,5 +1,8 @@
 'use client'
+import { useState } from 'react'
 import { useGameStore } from '@/lib/client/store'
+import { useGameAudio } from '@/lib/client/useGameAudio'
+import { SoundToggle } from '@/components/SoundToggle'
 import type { ChipValue, ClientMessage } from '@/lib/types'
 import { PHASE_COLOR, VARIANT_INFO } from '@/lib/types'
 import { CardFace } from '@/components/CardFace'
@@ -13,6 +16,8 @@ import { AbilityPanel } from '@/components/AbilityPanel'
 import { AbilityBadge } from '@/components/AbilityBadge'
 
 export function Table({ send }: { send: (m: ClientMessage) => void }) {
+  const [soundEnabled, setSoundEnabled] = useState(true)
+  useGameAudio(soundEnabled)
   const state = useGameStore(s => s.state)!
   const myId = useGameStore(s => s.myPlayerId)!
   const hole = useGameStore(s => s.holeCards)
@@ -50,7 +55,10 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
                 </span>
               )}
             </div>
-            <span className="text-stone-400">Room {state.roomCode}</span>
+            <span className="flex items-center gap-2 text-stone-400">
+              Room {state.roomCode}
+              <SoundToggle onChange={setSoundEnabled} />
+            </span>
           </header>
 
           {isPaused && (
