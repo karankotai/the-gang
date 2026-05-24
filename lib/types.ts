@@ -18,6 +18,23 @@ export type Phase =
 export type ChipColor = 'white' | 'yellow' | 'orange' | 'red'
 export type ChipValue = 1 | 2 | 3 | 4 | 5 | 6
 
+export type HeistVariant =
+  | 'standard'
+  | 'lockedEarly'
+  | 'reverseRank'
+  | 'blindRiver'
+  | 'quickHeist'
+  | 'heatRising'
+
+export const VARIANT_INFO: Record<HeistVariant, { label: string; description: string }> = {
+  standard:    { label: 'Standard',       description: 'Base rules. Recommended for first-timers.' },
+  lockedEarly: { label: 'Locked Early',   description: 'One claim per phase: no swap, no steal, no return.' },
+  reverseRank: { label: 'Reverse Rank',   description: 'Chip 1 = highest hand, chip N = lowest. Mind-bender.' },
+  blindRiver:  { label: 'Blind River',    description: 'The 5th community card stays face-down until showdown.' },
+  quickHeist:  { label: 'Quick Heist',    description: 'Skip the turn phase. Shorter, snappier rounds.' },
+  heatRising:  { label: 'Heat Rising',    description: 'Phase timer halves each phase: 90s -> 60s -> 40s -> 20s.' },
+}
+
 export const PHASE_COLOR: Record<Extract<Phase, 'preflop'|'flop'|'turn'|'river'>, ChipColor> = {
   preflop: 'white',
   flop: 'yellow',
@@ -71,6 +88,7 @@ export type RoomState = {
   phaseDeadlineMs: Record<string, number>
   showdownAgreed: string[]
   heist: HeistState
+  variant: HeistVariant
   roundResult: RoundResult | null
   activeKick: KickProposal | null
 }
@@ -88,6 +106,7 @@ export type ClientMessage =
   | { t: 'nextRound' }
   | { t: 'kickProposal'; playerId: string }
   | { t: 'kickVote'; playerId: string; agree: boolean }
+  | { t: 'setVariant'; variant: HeistVariant }
   | { t: 'leave' }
 
 export type ServerMessage =

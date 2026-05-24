@@ -18,6 +18,7 @@ function baseState(over: Partial<RoomState> = {}): RoomState {
     phaseDeadlineMs: {},
     showdownAgreed: [],
     heist: { number: 1, roundsWon: 0, roundsLost: 0, totalHeistsWon: 0 },
+    variant: 'standard',
     roundResult: null,
     activeKick: null,
     ...over,
