@@ -10,6 +10,7 @@ import {
   advancePhase,
   resolveShowdown,
   removePlayer,
+  setVariant,
 } from '../stateMachine'
 import { deal } from '../dealer'
 
@@ -159,5 +160,15 @@ describe('stateMachine', () => {
     expect(s.phaseDeadlineMs.a).toBe(laterMs + 90_000)
     expect(s.phaseDeadlineMs.b).toBe(laterMs + 90_000)
     expect(s.phaseDeadlineMs.c).toBe(laterMs + 90_000)
+  })
+
+  it('setVariant updates the variant only in lobby phase', () => {
+    let s = initialRoomState('R')
+    s = setVariant(s, 'reverseRank')
+    expect(s.variant).toBe('reverseRank')
+    for (const id of ['a','b','c']) { s = addPlayer(s, { id, name:id, avatar:'' }); s = setReady(s, id, true) }
+    s = startHeist(s, { seed: 's', nowMs: 0 })
+    s = setVariant(s, 'standard')
+    expect(s.variant).toBe('reverseRank') // unchanged after heist started
   })
 })

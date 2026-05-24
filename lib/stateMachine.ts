@@ -1,4 +1,4 @@
-import type { Card, ChipValue, LockedPhase, Phase, Player, RoomState, RoundResult } from './types'
+import type { Card, ChipValue, HeistVariant, LockedPhase, Phase, Player, RoomState, RoundResult } from './types'
 import { describeHand, evaluateBest, compareHands } from './evaluator'
 
 const PHASE_TIMEOUT_MS = 90_000
@@ -68,6 +68,11 @@ export function setIdentity(state: RoomState, playerId: string, name: string, av
 
 export function setReady(state: RoomState, playerId: string, ready: boolean): RoomState {
   return { ...state, players: state.players.map(p => p.id === playerId ? { ...p, ready } : p) }
+}
+
+export function setVariant(state: RoomState, variant: HeistVariant): RoomState {
+  if (state.phase !== 'lobby') return state
+  return { ...state, variant }
 }
 
 export function startHeist(state: RoomState, opts: { seed?: string; nowMs?: number } = {}): RoomState {
