@@ -1,5 +1,5 @@
 import type * as Party from 'partykit/server'
-import type { Card, ClientMessage, RoomState, ServerMessage } from '../lib/types'
+import type { Card, ChipValue, ClientMessage, RoomState, ServerMessage } from '../lib/types'
 import {
   initialRoomState, addPlayer, setIdentity, setReady, setConnected,
   startHeist, claimChip, returnChip, setReadyForNextPhase, advancePhase,
@@ -13,6 +13,7 @@ export default class GangServer implements Party.Server {
   holeCards: Map<string, [Card, Card]> = new Map()
   community: Card[] = []
   connByPlayer: Map<string, Party.Connection> = new Map()
+  phaseTimers: Map<string, ReturnType<typeof setTimeout>> = new Map()
 
   constructor(readonly party: Party.Room) {
     this.room = initialRoomState(party.id)
@@ -34,6 +35,12 @@ export default class GangServer implements Party.Server {
     if (existing) {
       this.room = setConnected(this.room, playerId, true)
       this.connByPlayer.set(playerId, connection)
+      const deadline = this.room.phaseDeadlineMs[playerId]
+      if (deadline != null) {
+        const delay = Math.max(0, deadline - Date.now())
+        const t = setTimeout(() => this.onPhaseTimerExpired(playerId), delay)
+        this.phaseTimers.set(playerId, t)
+      }
       const hc = this.holeCards.get(playerId)
       if (hc) this.sendPrivate(playerId, hc)
     } else {
@@ -59,6 +66,8 @@ export default class GangServer implements Party.Server {
     if (this.connByPlayer.get(playerId) === connection) {
       this.connByPlayer.delete(playerId)
       this.room = setConnected(this.room, playerId, false)
+      const t = this.phaseTimers.get(playerId)
+      if (t) { clearTimeout(t); this.phaseTimers.delete(playerId) }
       this.broadcastState()
     }
   }
@@ -107,7 +116,7 @@ export default class GangServer implements Party.Server {
       }
       case 'nextRound':
         if (this.room.phase !== 'roundResult' && this.room.phase !== 'heistResult') return
-        this.room = nextRoundOrHeist(this.room)
+        this.room = nextRoundOrHeist(this.room, Date.now())
         if (this.room.phase === 'preflop') this.dealAndStart()
         break
       case 'kickProposal':
@@ -121,7 +130,7 @@ export default class GangServer implements Party.Server {
   }
 
   private beginHeist() {
-    this.room = startHeist(this.room)
+    this.room = startHeist(this.room, { nowMs: Date.now() })
     if (this.room.phase !== 'preflop') return this.broadcastState()
     this.dealAndStart()
   }
@@ -132,11 +141,13 @@ export default class GangServer implements Party.Server {
     this.holeCards = new Map(Object.entries(result.holeCards) as [string, [Card, Card]][])
     this.community = result.community
     for (const [id, hc] of this.holeCards) this.sendPrivate(id, hc)
+    this.scheduleTimers()
     this.broadcastState()
   }
 
   private advance() {
-    this.room = advancePhase(this.room, this.community)
+    this.room = advancePhase(this.room, this.community, Date.now())
+    this.scheduleTimers()
     this.broadcastState()
   }
 
@@ -149,6 +160,43 @@ export default class GangServer implements Party.Server {
     for (const [id, c] of this.holeCards) hc[id] = c
     const result = resolveShowdown(this.room, hc, this.community)
     this.room = applyRoundResult(this.room, result)
+    this.broadcastState()
+  }
+
+  private clearPhaseTimers() {
+    for (const t of this.phaseTimers.values()) clearTimeout(t)
+    this.phaseTimers.clear()
+  }
+
+  private scheduleTimers() {
+    this.clearPhaseTimers()
+    for (const [playerId, deadline] of Object.entries(this.room.phaseDeadlineMs)) {
+      const player = this.room.players.find(p => p.id === playerId)
+      if (!player || !player.connected) continue
+      const delay = Math.max(0, deadline - Date.now())
+      const t = setTimeout(() => this.onPhaseTimerExpired(playerId), delay)
+      this.phaseTimers.set(playerId, t)
+    }
+  }
+
+  private onPhaseTimerExpired(playerId: string) {
+    const player = this.room.players.find(p => p.id === playerId)
+    if (!player || !player.connected) return
+    const alreadyHeld = Object.values(this.room.currentChips).includes(playerId)
+    if (!alreadyHeld) {
+      const entries = Object.entries(this.room.currentChips)
+        .map(([k, v]) => [Number(k), v] as [number, string | null | undefined])
+        .sort((a, b) => a[0] - b[0])
+      const target = entries.find(([, holder]) => holder == null)
+      if (target) this.room = claimChip(this.room, playerId, target[0] as ChipValue)
+    }
+    if (!this.room.phaseReady.includes(playerId)) {
+      this.room = setReadyForNextPhase(this.room, playerId, true)
+    }
+    if (allPhaseReady(this.room)) {
+      this.advance()
+      return
+    }
     this.broadcastState()
   }
 
