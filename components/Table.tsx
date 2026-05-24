@@ -1,7 +1,7 @@
 'use client'
 import { useGameStore } from '@/lib/client/store'
 import type { ChipValue, ClientMessage } from '@/lib/types'
-import { PHASE_COLOR } from '@/lib/types'
+import { PHASE_COLOR, VARIANT_INFO } from '@/lib/types'
 import { CardFace } from '@/components/CardFace'
 import { ShowdownReveal } from '@/components/ShowdownReveal'
 import { ChipIcon } from '@/components/ChipIcon'
@@ -34,7 +34,17 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
         <div className="space-y-4">
           <header className="flex items-center justify-between gap-4 text-sm">
             <HeistProgress heist={state.heist} />
-            <span className="uppercase tracking-wider text-stone-400 text-xs">{state.phase}</span>
+            <div className="flex items-center gap-2 text-xs">
+              <span className="uppercase tracking-wider text-stone-400">{state.phase}</span>
+              {state.variant !== 'standard' && (
+                <span
+                  title={VARIANT_INFO[state.variant].description}
+                  className="px-2 py-0.5 rounded bg-rose-900/40 text-rose-200 border border-rose-700/60 uppercase tracking-wide"
+                >
+                  {VARIANT_INFO[state.variant].label}
+                </span>
+              )}
+            </div>
             <span className="text-stone-400">Room {state.roomCode}</span>
           </header>
 
