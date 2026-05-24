@@ -308,7 +308,7 @@ export function nextRoundOrHeist(state: RoomState, nowMs?: number): RoomState {
     currentChips: chipPoolFor(state.players.filter(p=>p.connected).length),
     lockedChips: [],
     phaseReady: [],
-    phaseDeadlineMs: freshPhaseDeadlines(state, t),
+    phaseDeadlineMs: freshPhaseDeadlines(state, t, 'preflop'),
     showdownAgreed: [],
     roundResult: null,
   }

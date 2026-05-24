@@ -3,7 +3,7 @@ import type { Card, ChipValue, ClientMessage, RoomState, ServerMessage } from '.
 import {
   initialRoomState, addPlayer, setIdentity, setReady, setConnected,
   startHeist, claimChip, returnChip, setReadyForNextPhase, advancePhase,
-  resolveShowdown, applyRoundResult, nextRoundOrHeist, removePlayer,
+  resolveShowdown, applyRoundResult, nextRoundOrHeist, removePlayer, setVariant,
 } from '../lib/stateMachine'
 import { canClaimChip, canReturnChip, canReadyForNextPhase, allPhaseReady, canProposeKick, kickVoteSatisfied } from '../lib/rules'
 import { deal } from '../lib/dealer'
@@ -89,6 +89,13 @@ export default class GangServer implements Party.Server {
       case 'setIdentity':
         this.room = setIdentity(this.room, playerId, msg.name.slice(0, 20), msg.avatar.slice(0, 60))
         break
+      case 'setVariant': {
+        if (this.room.phase !== 'lobby') return this.err(playerId, 'NOT_LOBBY')
+        const hostId = this.room.players.find(p => p.connected)?.id
+        if (playerId !== hostId) return this.err(playerId, 'NOT_HOST')
+        this.room = setVariant(this.room, msg.variant)
+        break
+      }
       case 'ready':
         this.room = setReady(this.room, playerId, msg.ready)
         break
@@ -192,6 +199,10 @@ export default class GangServer implements Party.Server {
   private runShowdown() {
     const hc: Record<string, [Card, Card]> = {}
     for (const [id, c] of this.holeCards) hc[id] = c
+    // For blindRiver, the room currently shows only 4 community cards — reveal the full 5 now.
+    if (this.room.variant === 'blindRiver' && this.room.community.length < 5) {
+      this.room = { ...this.room, community: this.community.slice(0, 5) }
+    }
     const result = resolveShowdown(this.room, hc, this.community)
     this.room = applyRoundResult(this.room, result)
     this.broadcastState()
