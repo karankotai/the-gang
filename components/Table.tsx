@@ -8,6 +8,7 @@ import { ChipIcon } from '@/components/ChipIcon'
 import { HeistProgress } from '@/components/HeistProgress'
 import { EventLog } from '@/components/EventLog'
 import { motion, LayoutGroup } from 'framer-motion'
+import { Countdown } from '@/components/Countdown'
 
 export function Table({ send }: { send: (m: ClientMessage) => void }) {
   const state = useGameStore(s => s.state)!
@@ -66,7 +67,10 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
                       )}
                       {isMe && <span className="text-amber-300 text-xs">(you)</span>}
                     </div>
-                    {isReady && <span className="text-emerald-400 text-xs">✓</span>}
+                    <div className="flex items-center gap-1">
+                      {p.connected && <Countdown deadlineMs={state.phaseDeadlineMs[p.id]} />}
+                      {isReady && <span className="text-emerald-400 text-xs">✓</span>}
+                    </div>
                   </div>
                   <div className="text-xs text-stone-400">{p.connected ? 'online' : 'offline'}</div>
                   <div className="mt-2 flex gap-1 text-xs items-center">
@@ -96,6 +100,37 @@ export function Table({ send }: { send: (m: ClientMessage) => void }) {
                       </motion.div>
                     )}
                   </div>
+                  {!p.connected && !isMe && (
+                    <div className="mt-2 text-xs">
+                      {!state.activeKick && (
+                        <button
+                          className="px-2 py-1 rounded bg-rose-900/40 text-rose-200 border border-rose-700 hover:bg-rose-800/60"
+                          onClick={() => send({ t: 'kickProposal', playerId: p.id })}
+                        >
+                          Propose kick
+                        </button>
+                      )}
+                      {state.activeKick && state.activeKick.targetId === p.id && state.activeKick.votes[myId] === undefined && (
+                        <div className="flex gap-1">
+                          <button
+                            className="px-2 py-1 rounded bg-rose-700 text-stone-50 hover:bg-rose-600"
+                            onClick={() => send({ t: 'kickVote', playerId: p.id, agree: true })}
+                          >
+                            Vote yes
+                          </button>
+                          <button
+                            className="px-2 py-1 rounded bg-stone-700 text-stone-200 hover:bg-stone-600"
+                            onClick={() => send({ t: 'kickVote', playerId: p.id, agree: false })}
+                          >
+                            Vote no
+                          </button>
+                        </div>
+                      )}
+                      {state.activeKick && state.activeKick.targetId === p.id && state.activeKick.votes[myId] !== undefined && (
+                        <div className="text-stone-400 italic">You voted {state.activeKick.votes[myId] ? 'yes' : 'no'}</div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )
             })}
