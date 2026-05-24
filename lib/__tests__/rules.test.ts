@@ -123,6 +123,32 @@ describe('canProposeKick', () => {
   })
 })
 
+describe('lockedEarly variant', () => {
+  it('canClaimChip denies a held chip (no swap, no steal)', () => {
+    const s = baseState({
+      variant: 'lockedEarly',
+      currentChips: { 1: 'b', 2: null, 3: null },
+    })
+    expect(canClaimChip(s, 'a', 1)).toBe(false) // can't steal
+    expect(canClaimChip(s, 'b', 1)).toBe(false) // can't re-claim own
+    expect(canClaimChip(s, 'a', 2)).toBe(true)  // unclaimed still ok
+  })
+  it('canClaimChip denies a player who already holds a chip (no swap to a new one)', () => {
+    const s = baseState({
+      variant: 'lockedEarly',
+      currentChips: { 1: 'a', 2: null, 3: null },
+    })
+    expect(canClaimChip(s, 'a', 2)).toBe(false)
+  })
+  it('canReturnChip denies in lockedEarly even if you hold a chip', () => {
+    const s = baseState({
+      variant: 'lockedEarly',
+      currentChips: { 1: 'a', 2: null, 3: null },
+    })
+    expect(canReturnChip(s, 'a')).toBe(false)
+  })
+})
+
 describe('kickVoteSatisfied', () => {
   it('true when strict majority of connected non-target players voted yes', () => {
     const s = baseState({

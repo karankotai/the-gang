@@ -13,11 +13,17 @@ export function canClaimChip(state: RoomState, _playerId: string, value: ChipVal
   if (!CLAIM_PHASES.has(state.phase)) return false
   const n = state.players.filter(p => p.connected).length
   if (value < 1 || value > n) return false
+  if (state.variant === 'lockedEarly') {
+    if (state.currentChips[value] != null) return false
+    const alreadyHolds = Object.values(state.currentChips).includes(_playerId)
+    if (alreadyHolds) return false
+  }
   return true
 }
 
 export function canReturnChip(state: RoomState, playerId: string): boolean {
   if (!CLAIM_PHASES.has(state.phase)) return false
+  if (state.variant === 'lockedEarly') return false
   return holderOf(state, playerId) !== null
 }
 
